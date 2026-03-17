@@ -1765,7 +1765,8 @@ function renderPayments() {
     const monto = s.tarifa || s.monto || 0;
     const nombre = s.nombre || '—';
     const coach = s.coach || '—';
-    const dp = s.diaPago || s.dia_pago || '—';
+    const dp = s.diaPago || s.dia_pago;
+    const dpLabel = dp ? 'Día ' + dp : '—';
 
     let statusBadgeHtml, dLabel;
     if (s.status === 'vencido') {
