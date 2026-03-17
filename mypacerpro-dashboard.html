@@ -232,6 +232,73 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   .grid-2,.grid-3,.grid-1-2,.grid-2-1{grid-template-columns:1fr}
   #main{padding:16px 16px 60px}
 }
+
+/* ── ACTION BTN ── */
+.action-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .2s}
+.action-btn:hover{background:#ea6c0a;transform:translateY(-1px)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filter-input{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:13px;color:var(--text);font-family:inherit;outline:none;flex:1;min-width:220px;transition:border-color .2s}
+.filter-input:focus{border-color:var(--accent)}
+.filter-select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s}
+.filter-select:focus{border-color:var(--accent)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;width:680px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1.5px}
+.modal-close{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;transition:all .15s}
+.modal-close:hover{border-color:var(--danger);color:var(--danger)}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+.form-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-input.err{border-color:var(--danger)}
+.form-textarea{min-height:72px;resize:vertical;line-height:1.5}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:#ea6c0a}
+.btn-secondary{background:var(--subtle);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 22px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-secondary:hover{border-color:var(--muted)}
+
+/* ── STUDENT ACTIONS ── */
+.tbl-actions{display:flex;gap:6px}
+.tbl-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;transition:all .15s}
+.tbl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tbl-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+
+/* ── WA BUTTON ── */
+.wa-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;text-decoration:none;transition:all .15s}
+.wa-btn:hover{background:rgba(34,197,94,.22);color:#fff}
+
+/* ── PAY REGISTER FORM ── */
+.pay-form-box{background:var(--card);border:1px solid var(--accent);border-radius:14px;padding:22px;margin-bottom:24px}
+.pay-form-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;color:var(--accent)}
+.pay-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end}
+
+/* ── SALDO DISPLAY ── */
+.saldo-box{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.04));border:1px solid rgba(34,197,94,.25);border-radius:14px;padding:20px 24px;margin-bottom:24px}
+.saldo-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.saldo-value{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--accent3)}
+
+/* STATUS BADGES */
+.st-activo{background:rgba(34,197,94,.15);color:#4ade80}
+.st-inactivo{background:rgba(239,68,68,.15);color:#f87171}
+.st-pausado{background:rgba(234,179,8,.15);color:#facc15}
+
+/* PAY STATUS */
+.pay-hoy{background:rgba(249,115,22,.15);color:#fb923c}
+.pay-proximo{background:rgba(59,130,246,.15);color:#60a5fa}
+.pay-vencido{background:rgba(239,68,68,.15);color:#f87171}
+
 </style>
 </head>
 <body>
@@ -291,6 +358,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <div class="nav-item" data-page="finance" onclick="go('finance')">
     <span class="icon">💰</span><span class="label">Finanzas</span>
+  </div>
+  <div class="nav-item" data-page="students" onclick="go('students')">
+    <span class="icon">👤</span><span class="label">Alumnos</span>
+  </div>
+  <div class="nav-item" data-page="payments" onclick="go('payments')">
+    <span class="icon">📅</span><span class="label">Cobros Semana</span>
   </div>
   <div class="sidebar-spacer"></div>
   <button class="log-btn" onclick="toggleLog()">
@@ -545,6 +618,192 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════ STUDENTS ════════════════════════════════ -->
+<div class="page" id="page-students">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Alumnos</div>
+      <div class="page-subtitle">Gestión completa de alumnos — agregar, editar, cambiar estado</div>
+    </div>
+    <div class="header-right">
+      <button class="action-btn" onclick="openStudentModal()">＋ Nuevo Alumno</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar mb-6">
+    <input class="filter-input" id="st-search" type="text" placeholder="🔍  Buscar por nombre, DNI, email..." oninput="filterStudents()"/>
+    <select class="filter-select" id="st-coach" onchange="filterStudents()">
+      <option value="">Todos los coaches</option>
+    </select>
+    <select class="filter-select" id="st-status" onchange="filterStudents()">
+      <option value="">Todos los estados</option>
+      <option value="ACTIVO">Activo</option>
+      <option value="INACTIVO">Inactivo</option>
+      <option value="PAUSADO">Pausado</option>
+    </select>
+    <select class="filter-select" id="st-disc" onchange="filterStudents()">
+      <option value="">Todas las disciplinas</option>
+      <option value="Running">Running</option>
+      <option value="Nutrición">Nutrición</option>
+      <option value="Fuerza">Fuerza</option>
+      <option value="Tripacers">Tripacers</option>
+    </select>
+  </div>
+
+  <!-- Stats row -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px" id="st-kpis"></div>
+
+  <!-- Table -->
+  <div class="chart-box table-scroll">
+    <table class="data-table" id="t-students">
+      <thead><tr>
+        <th>DNI / ID</th><th>Nombre</th><th>Coach</th><th>Disciplina</th>
+        <th>Estado</th><th>Monto</th><th>Día Pago</th><th>Ingreso</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tb-students"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- STUDENT MODAL -->
+<div class="modal-overlay" id="studentModal" onclick="if(event.target===this)closeStudentModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="studentModalTitle">Nuevo Alumno</div>
+      <button class="modal-close" onclick="closeStudentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">DNI / CE *</label>
+          <input class="form-input" id="f-dni" type="text" placeholder="12345678"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre Completo *</label>
+          <input class="form-input" id="f-nombre" type="text" placeholder="Juan Pérez"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Nacimiento</label>
+          <input class="form-input" id="f-fnac" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input class="form-input" id="f-tel" type="tel" placeholder="999888777"/>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Correo</label>
+          <input class="form-input" id="f-mail" type="email" placeholder="correo@email.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Coach *</label>
+          <select class="form-input" id="f-coach">
+            <option value="">Seleccionar...</option>
+            <option>Cristopher</option><option>Sergio</option><option>Francis</option>
+            <option>Jesús</option><option>Bruno</option><option>Analu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Disciplina *</label>
+          <select class="form-input" id="f-disc">
+            <option value="">Seleccionar...</option>
+            <option>Running</option><option>Nutrición</option>
+            <option>Fuerza</option><option>Tripacers</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-input" id="f-estado">
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+            <option value="PAUSADO">Pausado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de Ingreso</label>
+          <select class="form-input" id="f-tipo">
+            <option value="NUEVO">Nuevo</option>
+            <option value="RENOVACIÓN">Renovación</option>
+            <option value="RE-INGRESO">Re-ingreso</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto (S/)</label>
+          <input class="form-input" id="f-monto" type="number" placeholder="150"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Día de Pago</label>
+          <input class="form-input" id="f-diapago" type="number" placeholder="1" min="1" max="31"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Ingreso</label>
+          <input class="form-input" id="f-fingreso" type="date"/>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Notas / Motivo de baja / Observaciones</label>
+          <textarea class="form-input form-textarea" id="f-notas" placeholder="Observaciones, motivo de pausa o baja, lesiones, etc."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeStudentModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveStudent()">Guardar Alumno</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PAYMENTS WEEK ════════════════════════════ -->
+<div class="page" id="page-payments">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Cobros de la Semana</div>
+      <div class="page-subtitle" id="pw-range">—</div>
+    </div>
+    <div class="header-right">
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:12px;color:var(--muted)">Días adelante:</label>
+        <select class="filter-select" id="pw-days" onchange="renderPayments()" style="width:80px">
+          <option value="7">7</option><option value="14">14</option><option value="30">30</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+    <div class="kpi-card" style="--card-accent:var(--warning)">
+      <div class="kpi-label">Por Cobrar</div>
+      <div class="kpi-value" id="pw-count">—</div>
+      <div class="kpi-sub">alumnos en el período</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--accent3)">
+      <div class="kpi-label">Monto Esperado</div>
+      <div class="kpi-value" id="pw-total">—</div>
+      <div class="kpi-sub">soles estimados</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--accent2)">
+      <div class="kpi-label">Vencen Hoy</div>
+      <div class="kpi-value" id="pw-today">—</div>
+      <div class="kpi-sub">pago hoy</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--danger)">
+      <div class="kpi-label">Vencidos</div>
+      <div class="kpi-value" id="pw-overdue">—</div>
+      <div class="kpi-sub">días pasados sin pago</div>
+    </div>
+  </div>
+
+  <div class="chart-box table-scroll">
+    <table class="data-table">
+      <thead><tr>
+        <th>Alumno</th><th>Coach</th><th>Monto</th><th>Día Pago</th>
+        <th>Estado</th><th>Teléfono</th><th>WhatsApp</th>
+      </tr></thead>
+      <tbody id="tb-payments"></tbody>
+    </table>
+  </div>
+</div>
+
 </main>
 
 <script>
@@ -769,6 +1028,18 @@ function renderAll() {
   renderCoaches();
   renderBirthdays();
   renderFinance();
+  renderStudents();
+  renderPayments();
+  renderFinanceExtended();
+  // Populate datalist for payment form
+  const dl = document.getElementById('pf-alumno-list');
+  if (dl) {
+    dl.innerHTML = allStudents().filter(s=>(s.estado||'').toUpperCase()==='ACTIVO')
+      .map(s=>`<option value="${s.nombre}"></option>`).join('');
+  }
+  // Set today's date in payment form
+  const pfDate = document.getElementById('pf-fecha');
+  if (pfDate) pfDate.value = new Date().toISOString().slice(0,10);
   // Date labels
   const now=new Date();
   document.getElementById('ov-date').textContent =
@@ -1214,6 +1485,402 @@ function renderFinance(){
   });
 }
 
+
+
+/* ═══════════════════════════ LOCAL STUDENT DB ══════════════════ */
+const LS_STUDENTS = 'mpp_students';
+const LS_PAYMENTS = 'mpp_local_payments';
+const LS_SALDO    = 'mpp_saldo';
+
+function getLocalStudents() {
+  try { return JSON.parse(localStorage.getItem(LS_STUDENTS) || '[]'); } catch { return []; }
+}
+function saveLocalStudents(arr) { localStorage.setItem(LS_STUDENTS, JSON.stringify(arr)); }
+
+function getLocalPayments() {
+  try { return JSON.parse(localStorage.getItem(LS_PAYMENTS) || '[]'); } catch { return []; }
+}
+function saveLocalPayments(arr) { localStorage.setItem(LS_PAYMENTS, JSON.stringify(arr)); }
+
+function getSaldo() {
+  const saved = localStorage.getItem(LS_SALDO);
+  if (saved) return parseFloat(saved);
+  // Default from CAJA sheet data
+  const cajaBalance = DB.caja.find(r => r.saldo && r.saldo > 1000);
+  return cajaBalance?.saldo || 4066.95;
+}
+function setSaldo(v) { localStorage.setItem(LS_SALDO, String(v)); }
+
+/* merge sheet base + local students */
+function allStudents() {
+  const sheet = DB.base.filter(b => b.nombre);
+  const local = getLocalStudents();
+  // local ones have id starting with 'L-'
+  const sheetIds = new Set(sheet.map(s => String(s.dni)));
+  // update local if edited
+  const localMap = {};
+  for (const l of local) localMap[l.id] = l;
+  // merge: local overrides sheet for same DNI
+  const merged = sheet.map(s => {
+    const key = String(s.dni);
+    if (localMap[key]) return { ...s, ...localMap[key], _source: 'sheet+local' };
+    return { ...s, _source: 'sheet' };
+  });
+  // add purely local (new) students
+  for (const l of local) {
+    if (!sheetIds.has(String(l.id)) && String(l.id).startsWith('L-')) {
+      merged.push({ ...l, _source: 'local' });
+    }
+  }
+  return merged;
+}
+
+/* ═══════════════════════════ STUDENT PAGE ══════════════════════ */
+let _editingStudentId = null;
+
+function renderStudents() {
+  const students = allStudents();
+  // KPIs
+  const kpiEl = document.getElementById('st-kpis');
+  const activos = students.filter(s => (s.estado || s.ESTADO || '').toUpperCase() === 'ACTIVO').length;
+  const inactivos = students.filter(s => (s.estado || s.ESTADO || '').toUpperCase() === 'INACTIVO').length;
+  const pausados = students.filter(s => (s.estado || s.ESTADO || '').toUpperCase() === 'PAUSADO').length;
+  kpiEl.innerHTML = `
+    <div class="kpi-card" style="--card-accent:var(--accent3)"><div class="kpi-label">Activos</div><div class="kpi-value">${activos}</div></div>
+    <div class="kpi-card" style="--card-accent:var(--danger)"><div class="kpi-label">Inactivos</div><div class="kpi-value">${inactivos}</div></div>
+    <div class="kpi-card" style="--card-accent:var(--warning)"><div class="kpi-label">Pausados</div><div class="kpi-value">${pausados}</div></div>
+    <div class="kpi-card" style="--card-accent:var(--accent2)"><div class="kpi-label">Total</div><div class="kpi-value">${students.length}</div></div>
+  `;
+  // Populate coach filter
+  const cf = document.getElementById('st-coach');
+  const coaches = [...new Set(students.map(s => s.coach || s.COACH).filter(Boolean))].sort();
+  if (cf.options.length <= 1) {
+    coaches.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; cf.appendChild(o); });
+  }
+  filterStudents();
+}
+
+function filterStudents() {
+  const q = (document.getElementById('st-search')?.value || '').toLowerCase();
+  const coach = document.getElementById('st-coach')?.value || '';
+  const status = document.getElementById('st-status')?.value || '';
+  const disc = document.getElementById('st-disc')?.value || '';
+  const students = allStudents();
+  const filtered = students.filter(s => {
+    const nombre = (s.nombre || '').toLowerCase();
+    const dni = String(s.dni || s.id || '').toLowerCase();
+    const mail = (s.correo || '').toLowerCase();
+    const matchQ = !q || nombre.includes(q) || dni.includes(q) || mail.includes(q);
+    const matchCoach = !coach || (s.coach || '') === coach;
+    const matchStatus = !status || (s.estado || '').toUpperCase() === status;
+    const matchDisc = !disc || (s.disc || s.disciplina || '') === disc;
+    return matchQ && matchCoach && matchStatus && matchDisc;
+  });
+  renderStudentTable(filtered);
+}
+
+function statusBadge(estado) {
+  const e = (estado || 'ACTIVO').toUpperCase();
+  if (e === 'ACTIVO') return `<span class="badge st-activo">Activo</span>`;
+  if (e === 'INACTIVO') return `<span class="badge st-inactivo">Inactivo</span>`;
+  return `<span class="badge st-pausado">Pausado</span>`;
+}
+
+function renderStudentTable(students) {
+  const tbody = document.getElementById('tb-students');
+  if (!students.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos encontrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map(s => {
+    const id = s.dni || s.id || '—';
+    const nombre = s.nombre || '—';
+    const coach = s.coach || '—';
+    const disc = s.disc || s.disciplina || '—';
+    const estado = s.estado || 'ACTIVO';
+    const monto = s.tarifa || s.monto || 0;
+    const diaPago = s.diaPago || s.dia_pago || '—';
+    const ingreso = s.fi ? fDate(s.fi) : (s.fechaIngreso ? fDate(new Date(s.fechaIngreso)) : '—');
+    const tel = s.celular || '';
+    return `<tr>
+      <td class="mono muted" style="font-size:11px">${id}</td>
+      <td style="font-weight:500">${nombre}</td>
+      <td><span style="color:${cc(coach)};font-weight:600;font-size:12px">${coach}</span></td>
+      <td><span class="badge bg-blue">${disc}</span></td>
+      <td>${statusBadge(estado)}</td>
+      <td class="mono green">${monto ? fMoney(monto) : '—'}</td>
+      <td class="mono" style="font-size:12px">${diaPago}</td>
+      <td class="muted" style="font-size:11px">${ingreso}</td>
+      <td><div class="tbl-actions">
+        <button class="tbl-btn" onclick="editStudent(${JSON.stringify(id)})">✏️</button>
+        ${tel ? `<a class="wa-btn" href="https://wa.me/51${tel}" target="_blank">📱</a>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openStudentModal(data) {
+  _editingStudentId = null;
+  document.getElementById('studentModalTitle').textContent = 'Nuevo Alumno';
+  ['dni','nombre','fnac','tel','mail','notas'].forEach(id => document.getElementById('f-'+id).value = '');
+  ['coach','disc','estado','tipo','monto','diapago','fingreso'].forEach(id => {
+    const el = document.getElementById('f-'+id);
+    if (el) el.value = el.tagName === 'SELECT' ? el.options[0].value : '';
+  });
+  document.getElementById('f-estado').value = 'ACTIVO';
+  document.getElementById('f-tipo').value = 'NUEVO';
+  document.getElementById('f-fingreso').value = new Date().toISOString().slice(0,10);
+  document.getElementById('studentModal').classList.remove('hidden');
+}
+
+function editStudent(id) {
+  const students = allStudents();
+  const s = students.find(st => String(st.dni || st.id) === String(id));
+  if (!s) return;
+  _editingStudentId = String(id);
+  document.getElementById('studentModalTitle').textContent = 'Editar Alumno';
+  document.getElementById('f-dni').value = s.dni || s.id || '';
+  document.getElementById('f-nombre').value = s.nombre || '';
+  document.getElementById('f-tel').value = s.celular || '';
+  document.getElementById('f-mail').value = s.correo || '';
+  document.getElementById('f-coach').value = s.coach || '';
+  document.getElementById('f-disc').value = s.disc || s.disciplina || '';
+  document.getElementById('f-estado').value = (s.estado || 'ACTIVO').toUpperCase();
+  document.getElementById('f-monto').value = s.tarifa || s.monto || '';
+  document.getElementById('f-diapago').value = s.diaPago || s.dia_pago || '';
+  document.getElementById('f-notas').value = s.notas || '';
+  if (s.fechaNac) {
+    const d = new Date(s.fechaNac);
+    if (!isNaN(d)) document.getElementById('f-fnac').value = d.toISOString().slice(0,10);
+  }
+  if (s.fi) {
+    const d = new Date(s.fi);
+    if (!isNaN(d)) document.getElementById('f-fingreso').value = d.toISOString().slice(0,10);
+  }
+  document.getElementById('studentModal').classList.remove('hidden');
+}
+
+function closeStudentModal() {
+  document.getElementById('studentModal').classList.add('hidden');
+  _editingStudentId = null;
+}
+
+function saveStudent() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const coach = document.getElementById('f-coach').value;
+  const disc = document.getElementById('f-disc').value;
+  if (!nombre || !coach || !disc) {
+    ['f-nombre','f-coach','f-disc'].forEach(id => {
+      if (!document.getElementById(id).value) document.getElementById(id).classList.add('err');
+      setTimeout(() => document.getElementById(id).classList.remove('err'), 1500);
+    });
+    return;
+  }
+  const id = _editingStudentId || ('L-' + Date.now());
+  const local = getLocalStudents();
+  const idx = local.findIndex(l => String(l.id) === String(id) || String(l.dni) === id);
+  const record = {
+    id, dni: document.getElementById('f-dni').value.trim() || id,
+    nombre,
+    fechaNac: document.getElementById('f-fnac').value || null,
+    celular: document.getElementById('f-tel').value.trim(),
+    correo: document.getElementById('f-mail').value.trim(),
+    coach, disc, disciplina: disc,
+    estado: document.getElementById('f-estado').value,
+    tipo: document.getElementById('f-tipo').value,
+    tarifa: parseFloat(document.getElementById('f-monto').value) || 0,
+    monto: parseFloat(document.getElementById('f-monto').value) || 0,
+    diaPago: parseInt(document.getElementById('f-diapago').value) || null,
+    fechaIngreso: document.getElementById('f-fingreso').value || null,
+    notas: document.getElementById('f-notas').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (idx >= 0) local[idx] = record;
+  else local.push(record);
+  saveLocalStudents(local);
+  closeStudentModal();
+  renderStudents();
+  showToast(_editingStudentId ? '✅ Alumno actualizado' : '✅ Alumno agregado');
+}
+
+/* ═══════════════════════════ PAYMENTS WEEK ═════════════════════ */
+function renderPayments() {
+  const days = parseInt(document.getElementById('pw-days')?.value || '7');
+  const today = new Date();
+  const todayDay = today.getDate();
+  const students = allStudents().filter(s => (s.estado || '').toUpperCase() === 'ACTIVO');
+
+  // Label range
+  const endDate = new Date(today); endDate.setDate(today.getDate() + days);
+  document.getElementById('pw-range').textContent =
+    today.toLocaleDateString('es-PE',{day:'numeric',month:'long'}) + ' → ' +
+    endDate.toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'});
+
+  // For each student, check if their diaPago falls in the window
+  const results = [];
+  let totalHoy = 0, totalVencido = 0;
+
+  for (const s of students) {
+    const diaPago = s.diaPago || s.dia_pago;
+    if (!diaPago) continue;
+    const dp = parseInt(diaPago);
+    if (isNaN(dp)) continue;
+
+    // How many days until next payment
+    let daysUntil = dp - todayDay;
+    if (daysUntil < -5) daysUntil += 30; // next month
+    if (daysUntil < 0 && daysUntil >= -5) {
+      // overdue
+      results.push({ ...s, daysUntil, status: 'vencido' });
+      totalVencido++;
+    } else if (daysUntil === 0) {
+      results.push({ ...s, daysUntil, status: 'hoy' });
+      totalHoy++;
+    } else if (daysUntil <= days) {
+      results.push({ ...s, daysUntil, status: 'proximo' });
+    }
+  }
+
+  results.sort((a,b) => a.daysUntil - b.daysUntil);
+  const totalMonto = results.reduce((s,r) => s+(r.tarifa||r.monto||0), 0);
+
+  document.getElementById('pw-count').textContent = results.length;
+  document.getElementById('pw-total').textContent = fMoney(totalMonto);
+  document.getElementById('pw-today').textContent = totalHoy;
+  document.getElementById('pw-overdue').textContent = totalVencido;
+
+  const tbody = document.getElementById('tb-payments');
+  if (!results.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin cobros en el período seleccionado</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = results.map(s => {
+    const tel = s.celular || '';
+    const tel51 = tel ? '51' + tel.replace(/\D/g,'') : '';
+    const monto = s.tarifa || s.monto || 0;
+    const nombre = s.nombre || '—';
+    const coach = s.coach || '—';
+    const dp = s.diaPago || s.dia_pago || '—';
+
+    let statusBadgeHtml, dLabel;
+    if (s.status === 'vencido') {
+      statusBadgeHtml = `<span class="badge pay-vencido">⚠️ Vencido ${Math.abs(s.daysUntil)}d</span>`;
+      dLabel = `Venció hace ${Math.abs(s.daysUntil)} día${Math.abs(s.daysUntil)!==1?'s':''}`;
+    } else if (s.status === 'hoy') {
+      statusBadgeHtml = `<span class="badge pay-hoy">🔔 HOY</span>`;
+      dLabel = 'Paga hoy';
+    } else {
+      statusBadgeHtml = `<span class="badge pay-proximo">📅 En ${s.daysUntil}d</span>`;
+      dLabel = `En ${s.daysUntil} día${s.daysUntil!==1?'s':''}`;
+    }
+
+    // WA message
+    const waMsg = encodeURIComponent(
+      `Hola ${nombre.split(' ')[0]} 👋, te recordamos que tu próxima renovación del plan en *MyPacerPro* vence el día *${dp}*. El monto es de *${fMoney(monto)}*. Para cualquier consulta escríbenos 🏃‍♂️`
+    );
+    const waLink = tel51 ? `https://wa.me/${tel51}?text=${waMsg}` : '';
+
+    return `<tr>
+      <td style="font-weight:500">${nombre}</td>
+      <td><span style="color:${cc(coach)};font-weight:600;font-size:12px">${coach}</span></td>
+      <td class="mono green">${fMoney(monto)}</td>
+      <td class="mono">${dp}</td>
+      <td>${statusBadgeHtml}</td>
+      <td class="mono muted" style="font-size:11px">${tel || '—'}</td>
+      <td>${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank">💬 WhatsApp</a>` : '<span class="muted" style="font-size:11px">sin teléfono</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════ FINANCE PAYMENTS ══════════════════ */
+function renderFinanceExtended() {
+  // Saldo display
+  const saldo = getSaldo();
+  const saldoEl = document.getElementById('f-balance');
+  if (saldoEl) saldoEl.textContent = fMoney(saldo);
+
+  // Local payments log
+  renderLocalPaymentsTable();
+}
+
+function renderLocalPaymentsTable() {
+  const payments = getLocalPayments().reverse();
+  const tbody = document.getElementById('tb-local-payments');
+  if (!tbody) return;
+  if (!payments.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Sin pagos registrados aún</td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => {
+    const badge = p.tipo === 'NUEVO' ? 'bg-green' : p.tipo === 'RE-INGRESO' ? 'bg-purple' : 'bg-blue';
+    return `<tr>
+      <td class="muted" style="font-size:11px">${p.fecha}</td>
+      <td style="font-weight:500">${p.alumno}</td>
+      <td><span class="badge ${badge}">${p.tipo}</span></td>
+      <td><span class="badge bg-gray">${p.metodo}</span></td>
+      <td class="mono green">${fMoney(p.monto)}</td>
+      <td class="mono">${p.referencia || '—'}</td>
+      <td><button class="tbl-btn danger" onclick="deletePayment('${p.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function registerPayment() {
+  const alumno = document.getElementById('pf-alumno')?.value.trim();
+  const monto = parseFloat(document.getElementById('pf-monto')?.value);
+  const tipo = document.getElementById('pf-tipo')?.value;
+  const metodo = document.getElementById('pf-metodo')?.value;
+  const fecha = document.getElementById('pf-fecha')?.value;
+  const referencia = document.getElementById('pf-ref')?.value.trim();
+
+  if (!alumno || !monto || !fecha) {
+    showToast('⚠️ Completa alumno, monto y fecha');
+    return;
+  }
+
+  const payments = getLocalPayments();
+  const id = 'P-' + Date.now();
+  payments.push({ id, alumno, monto, tipo, metodo, fecha, referencia, createdAt: new Date().toISOString() });
+  saveLocalPayments(payments);
+
+  // Deduct from saldo
+  const newSaldo = getSaldo() - monto;
+  setSaldo(newSaldo);
+
+  // Clear form
+  document.getElementById('pf-alumno').value = '';
+  document.getElementById('pf-monto').value = '';
+  document.getElementById('pf-ref').value = '';
+
+  renderLocalPaymentsTable();
+  renderFinanceExtended();
+  showToast(`✅ Pago de ${fMoney(monto)} registrado — Saldo: ${fMoney(newSaldo)}`);
+}
+
+function deletePayment(id) {
+  if (!confirm('¿Eliminar este pago del registro local?')) return;
+  const payments = getLocalPayments().filter(p => p.id !== id);
+  saveLocalPayments(payments);
+  renderLocalPaymentsTable();
+  showToast('Pago eliminado del registro local');
+}
+
+/* ═══════════════════════════ TOAST ═════════════════════════════ */
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:28px;right:28px;background:#1e1e2e;color:#f0f0f8;border:1px solid #2a2a3a;border-radius:10px;padding:12px 20px;font-size:13px;z-index:9000;transition:all .3s;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 3000);
+}
 
 /* ═══════════════════════════ AUTH & ACCESS LOG ════════════════ */
 // Password config — change these to your own
