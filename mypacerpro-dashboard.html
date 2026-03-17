@@ -1764,22 +1764,35 @@ function setSaldo(v) { localStorage.setItem(LS_SALDO, String(v)); }
 
 /* merge sheet base + local students */
 function allStudents() {
-  const sheet = DB.base.filter(b => b.nombre).map(s=>({...s,id:String(s.dni||''),_source:'sheet'}));
+  // Use DNI+DISC as unique composite key — same person can have 2 disciplines
+  const makeKey = s => String(s.dni||s.id||'') + '|' + String(s.disc||s.disciplina||'');
+
+  const sheet = DB.base.filter(b => b.nombre).map(s=>({
+    ...s,
+    id: makeKey(s),           // composite key: DNI|DISC
+    _rowDni: String(s.dni||''),
+    _source:'sheet'
+  }));
+
   const local = getLocalStudents();
-  // local ones have id starting with 'L-'
-  const sheetIds = new Set(sheet.map(s => String(s.dni)));
-  // update local if edited
+  const sheetKeys = new Set(sheet.map(s => s.id));
+
+  // Local map by composite key
   const localMap = {};
-  for (const l of local) localMap[l.id] = l;
-  // merge: local overrides sheet for same DNI
+  for (const l of local) {
+    const k = l.id.startsWith('L-') ? l.id : makeKey(l);
+    localMap[k] = l;
+  }
+
+  // Merge: local overrides sheet for same DNI+DISC key
   const merged = sheet.map(s => {
-    const key = String(s.dni);
-    if (localMap[key]) return { ...s, ...localMap[key], _source: 'sheet+local' };
+    if (localMap[s.id]) return { ...s, ...localMap[s.id], id: s.id, _source: 'sheet+local' };
     return { ...s, _source: 'sheet' };
   });
-  // add purely local (new) students
+
+  // Add purely local new students (L-... ids)
   for (const l of local) {
-    if (!sheetIds.has(String(l.id)) && String(l.id).startsWith('L-')) {
+    if (String(l.id).startsWith('L-')) {
       merged.push({ ...l, _source: 'local' });
     }
   }
@@ -1887,11 +1900,11 @@ function openStudentModal(data) {
 
 function editStudent(id) {
   const students = allStudents();
-  // Match by id, dni, or either field — handles both sheet and local students
+  // Match by composite id (DNI|DISC) or local id (L-...) or plain DNI fallback
   const s = students.find(st =>
     String(st.id) === String(id) ||
-    String(st.dni) === String(id) ||
-    String(st.id || st.dni) === String(id)
+    String(st._rowDni) === String(id) ||
+    String(st.dni) === String(id)
   );
   if (!s) return;
   _editingStudentId = String(id);
@@ -1933,7 +1946,9 @@ function saveStudent() {
     });
     return;
   }
+  // For existing students: id is 'DNI|DISC' composite. Preserve original disc for sheet lookup.
   const id = _editingStudentId || ('L-' + Date.now());
+  const _origDisc = _editingStudentId && _editingStudentId.includes('|') ? _editingStudentId.split('|')[1] : null;
   const local = getLocalStudents();
   const idx = local.findIndex(l => String(l.id) === String(id) || String(l.dni) === id);
   const record = {
@@ -1999,6 +2014,7 @@ function saveStudent() {
       correo: record.correo,
       coach: record.coach,
       disciplina: record.disc,
+      originalDisc: _origDisc || record.disc,
       estado: record.estado,
       tarifa: record.tarifa,
       diaPago: record.diaPago || '',
@@ -2016,7 +2032,14 @@ function saveStudent() {
 function deleteLocalStudent(id) {
   if (!confirm('¿Eliminar este alumno del registro local?\nNota: Solo se elimina del dashboard, NO del Google Sheet.')) return;
   const local = getLocalStudents();
-  const updated = local.filter(l => String(l.id) !== String(id) && String(l.dni) !== String(id));
+  const updated = local.filter(l => {
+    if (String(l.id) === String(id)) return false;
+    if (id.includes('|')) {
+      const [dniPart, discPart] = id.split('|');
+      if (String(l.dni) === dniPart && String(l.disc||l.disciplina||'') === discPart) return false;
+    }
+    return true;
+  });
   saveLocalStudents(updated);
   renderStudents();
   showToast('🗑️ Alumno eliminado del registro local');
