@@ -514,14 +514,38 @@ function avatarBg(name) {
 }
 const initials = n => (n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
 
-/* ═══════════════════════════ FETCH ════════════════════════════ */
-async function fetchSheet(name) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}`;
-  const res = await fetch(url);
-  const txt = await res.text();
-  const json = txt.replace(/^[^(]+\(/,'').replace(/\);?\s*$/,'');
-  const d = JSON.parse(json);
-  return { cols: d.table.cols.map(c=>c.label), rows: d.table.rows.map(r=>r.c.map(c=>c?c.v:null)) };
+/* ═══════════════════════════ FETCH (JSONP — CORS-safe) ════════ */
+let _cbCounter = 0;
+function fetchSheet(name) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__gsCallback_' + (++_cbCounter);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Timeout cargando: ' + name));
+    }, 15000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      try {
+        resolve({
+          cols: data.table.cols.map(c => c.label),
+          rows: data.table.rows.map(r => r.c.map(c => c ? c.v : null))
+        });
+      } catch(e) { reject(e); }
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json%3BresponseHandler:${cbName}&sheet=${encodeURIComponent(name)}`;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      reject(new Error('Error de red al cargar: ' + name));
+    };
+    document.head.appendChild(script);
+  });
 }
 
 /* ═══════════════════════════ LOAD ALL ═════════════════════════ */
