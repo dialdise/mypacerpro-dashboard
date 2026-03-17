@@ -693,7 +693,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 </div>
 
 <!-- STUDENT MODAL -->
-<div class="modal-overlay" id="studentModal" onclick="if(event.target===this)closeStudentModal()">
+<div class="modal-overlay hidden" id="studentModal" onclick="if(event.target===this)closeStudentModal()">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title" id="studentModalTitle">Nuevo Alumno</div>
@@ -2098,8 +2098,7 @@ function renderPayments() {
   }
 
   window._payResults = results;
-  let _pi = 0;
-  tbody.innerHTML = results.map(s => { const _pidx = _pi++;
+  tbody.innerHTML = results.map((s, _pidx) => {
     const tel = s.celular ? String(s.celular) : '';
     const tel51 = tel ? '51' + tel.replace(/\D/g,'') : '';
     const monto = s.tarifa || s.monto || 0;
@@ -2235,6 +2234,7 @@ function showToast(msg) {
 window._payStudent = null;
 
 function openPayConfirm(s) {
+  if (!s || !s.nombre) { showToast('⚠️ Error al abrir el pago — recarga la página'); return; }
   window._payStudent = s;
   document.getElementById('pc-alumno').value = s.nombre || '';
   document.getElementById('pc-monto').value = s.tarifa || s.monto || '';
