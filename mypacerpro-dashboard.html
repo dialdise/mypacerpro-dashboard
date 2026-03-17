@@ -299,6 +299,25 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .pay-proximo{background:rgba(59,130,246,.15);color:#60a5fa}
 .pay-vencido{background:rgba(239,68,68,.15);color:#f87171}
 
+/* ── FIN TAB BTNS ── */
+.fin-tab-btn{background:var(--subtle);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.fin-tab-btn.active{background:rgba(249,115,22,.15);border-color:var(--accent);color:var(--accent)}
+/* ── PAY DONE ROW ── */
+.paid-row td{opacity:.45;text-decoration:line-through}
+/* ── SCRIPT BTN ── */
+.script-cfg-btn{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px 0;cursor:pointer;border-radius:8px;width:calc(100% - 12px);margin:2px 6px;transition:all .15s;white-space:nowrap;overflow:hidden;color:var(--muted);background:none;border:none;font-family:inherit}
+.script-cfg-btn:hover{background:var(--subtle);color:var(--text)}
+.script-cfg-btn .icon{display:flex;align-items:center;justify-content:center;min-width:48px;width:48px;font-size:18px;flex-shrink:0}
+.script-cfg-btn .label{font-size:13px;font-weight:500;opacity:0;transition:opacity .15s;white-space:nowrap}
+#sidebar:hover .script-cfg-btn .label{opacity:1}
+/* ── ADD ENTRY BTN ── */
+.add-entry-btn{background:rgba(34,197,94,.1);color:var(--accent3);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:10px 18px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;transition:all .2s}
+.add-entry-btn:hover{background:rgba(34,197,94,.2);transform:translateY(-1px)}
+/* ── SYNC STATUS ── */
+.sync-ok{color:var(--accent3)!important}
+.sync-err{color:var(--danger)!important}
+.sync-pending{color:var(--warning)!important}
+
 </style>
 </head>
 <body>
@@ -372,6 +391,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <button class="sync-btn" onclick="loadAll(true)">
     <span class="icon" id="syncIcon">🔄</span>
     <span class="label">Sincronizar Datos</span>
+  </button>
+  <button class="script-cfg-btn" onclick="openScript()">
+    <span class="icon">⚙️</span><span class="label">Apps Script</span>
   </button>
   <button class="logout-btn" onclick="doLogout()">
     <span class="icon">🚪</span><span class="label">Cerrar Sesión</span>
@@ -551,6 +573,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <div>
       <div class="page-title">Finanzas</div>
       <div class="page-subtitle">Ingresos, pagos a coaches y gastos operativos en soles</div>
+    </div>
+    <div class="header-right">
+      <button class="add-entry-btn" onclick="openFinWrite()">➕ Agregar Movimiento</button>
     </div>
   </div>
 
@@ -797,10 +822,208 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <table class="data-table">
       <thead><tr>
         <th>Alumno</th><th>Coach</th><th>Monto</th><th>Día Pago</th>
-        <th>Estado</th><th>Teléfono</th><th>WhatsApp</th>
+        <th>Estado</th><th>Teléfono</th><th>WhatsApp</th><th>Acción</th>
       </tr></thead>
       <tbody id="tb-payments"></tbody>
     </table>
+  </div>
+
+  <!-- CONFIRM PAYMENT MODAL -->
+  <div class="modal-overlay hidden" id="payConfirmModal" onclick="if(event.target===this)closePay()">
+    <div class="modal-box" style="max-width:480px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">✅ Confirmar Pago</div>
+        <button class="modal-close" onclick="closePay()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">Alumno</label>
+            <input class="form-input" id="pc-alumno" type="text" readonly style="opacity:.7"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Monto S/ *</label>
+            <input class="form-input" id="pc-monto" type="number" placeholder="150"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo de Ingreso</label>
+            <select class="form-input" id="pc-tipo">
+              <option value="RENOVACIÓN">Renovación</option>
+              <option value="NUEVO">Nuevo</option>
+              <option value="RE-INGRESO">Re-ingreso</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Programa / Servicio</label>
+            <select class="form-input" id="pc-programa">
+              <option value="RUNNING">RUNNING</option>
+              <option value="NUTRICIÓN">NUTRICIÓN</option>
+              <option value="FUERZA">FUERZA</option>
+              <option value="TRIPACERS">TRIPACERS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Método de Pago</label>
+            <select class="form-input" id="pc-metodo">
+              <option value="YAPE">YAPE</option>
+              <option value="PLIN">PLIN</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de Pago</label>
+            <input class="form-input" id="pc-fecha" type="date"/>
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">N° Operación / Referencia</label>
+            <input class="form-input" id="pc-ref" type="text" placeholder="Código de transacción (opcional)"/>
+          </div>
+        </div>
+        <div id="pc-sync-status" style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closePay()">Cancelar</button>
+        <button class="btn-primary" onclick="confirmPay()">✅ Confirmar Pago</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:none">
+    </table>
+  </div>
+</div>
+
+
+<!-- SCRIPT CONFIG MODAL -->
+<div class="modal-overlay hidden" id="scriptModal" onclick="if(event.target===this)closeScript()">
+  <div class="modal-box" style="max-width:520px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Configurar Google Apps Script</div>
+      <button class="modal-close" onclick="closeScript()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        Para escribir datos al Google Sheet, necesitas desplegar un <b style="color:var(--text)">Apps Script Web App</b>.
+        Sigue los pasos y pega la URL aquí:
+      </p>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;font-size:12px;line-height:1.8;font-family:'JetBrains Mono',monospace">
+        1. Abre tu Google Sheet<br>
+        2. <b>Extensiones → Apps Script</b><br>
+        3. Borra todo y pega el código de abajo<br>
+        4. Guarda → <b>Implementar → Nueva implementación</b><br>
+        5. Tipo: <b>Aplicación web</b> → Ejecutar como: <b>Yo</b> → Acceso: <b>Cualquier persona</b><br>
+        6. Copia la URL y pégala aquí
+      </div>
+      <div style="background:#0a0a0f;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:11px;font-family:'JetBrains Mono',monospace;color:#4ade80;overflow-x:auto;white-space:pre;max-height:200px;overflow-y:auto" id="scriptCode"></div>
+      <div class="form-group">
+        <label class="form-label">URL del Web App *</label>
+        <input class="form-input" id="scriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec"/>
+      </div>
+      <div id="script-test-result" style="margin-top:8px;font-size:12px;min-height:16px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="testScriptUrl()">🧪 Probar conexión</button>
+      <button class="btn-primary" onclick="saveScriptUrl()">Guardar URL</button>
+    </div>
+  </div>
+</div>
+
+<!-- FINANCE WRITE MODAL -->
+<div class="modal-overlay hidden" id="finWriteModal" onclick="if(event.target===this)closeFinWrite()">
+  <div class="modal-box" style="max-width:520px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="finWriteTitle">➕ Registrar Movimiento</div>
+      <button class="modal-close" onclick="closeFinWrite()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button class="fin-tab-btn active" id="ftab-ingreso" onclick="setFinTab('ingreso')">💰 Ingreso</button>
+        <button class="fin-tab-btn" id="ftab-gasto" onclick="setFinTab('gasto')">💸 Gasto</button>
+      </div>
+      <div class="form-grid" id="fin-ingreso-fields">
+        <div class="form-group form-full">
+          <label class="form-label">Alumno *</label>
+          <input class="form-input" id="fi-alumno" type="text" placeholder="Nombre del alumno" list="fi-alumno-list"/>
+          <datalist id="fi-alumno-list"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto S/ *</label>
+          <input class="form-input" id="fi-monto" type="number" placeholder="150"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-input" id="fi-tipo">
+            <option value="RENOVACIÓN">Renovación</option>
+            <option value="NUEVO">Nuevo</option>
+            <option value="RE-INGRESO">Re-ingreso</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Programa</label>
+          <select class="form-input" id="fi-programa">
+            <option value="RUNNING">RUNNING</option>
+            <option value="NUTRICIÓN">NUTRICIÓN</option>
+            <option value="FUERZA">FUERZA</option>
+            <option value="TRIPACERS">TRIPACERS</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Método</label>
+          <select class="form-input" id="fi-metodo">
+            <option value="YAPE">YAPE</option>
+            <option value="PLIN">PLIN</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input class="form-input" id="fi-fecha" type="date"/>
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">N° Referencia</label>
+          <input class="form-input" id="fi-ref" type="text" placeholder="Código de operación (opcional)"/>
+        </div>
+      </div>
+      <div class="form-grid" id="fin-gasto-fields" style="display:none">
+        <div class="form-group form-full">
+          <label class="form-label">Detalle del Gasto *</label>
+          <input class="form-input" id="fg-detalle" type="text" placeholder="Ej: Hielos, Parlante, etc."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto S/ *</label>
+          <input class="form-input" id="fg-monto" type="number" placeholder="50"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select class="form-input" id="fg-cat">
+            <option value="Operativo">Operativo</option>
+            <option value="Equipamiento">Equipamiento</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Evento">Evento</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input class="form-input" id="fg-fecha" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Medio de Pago</label>
+          <select class="form-input" id="fg-medio">
+            <option value="Efectivo">Efectivo</option>
+            <option value="YAPE">YAPE</option>
+            <option value="PLIN">PLIN</option>
+            <option value="Transferencia">Transferencia</option>
+          </select>
+        </div>
+      </div>
+      <div id="fin-write-status" style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeFinWrite()">Cancelar</button>
+      <button class="btn-primary" onclick="submitFinWrite()">Guardar en Sheet</button>
+    </div>
   </div>
 </div>
 
@@ -808,6 +1031,30 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 <script>
 /* ═══════════════════════════ CONFIG ═══════════════════════════ */
+// ⚠️ SET THIS after deploying the Google Apps Script (see README)
+// Deploy the script from HERRAMIENTAS section in the dashboard
+let APPS_SCRIPT_URL = localStorage.getItem('mpp_script_url') || '';
+
+/* ── WRITE TO GOOGLE SHEET via Apps Script ── */
+async function writeToSheet(action, payload) {
+  if (!APPS_SCRIPT_URL) {
+    showToast('⚠️ Configura el Apps Script URL primero (ver botón ⚙️)');
+    return { ok: false, error: 'no_url' };
+  }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Apps Script needs no-cors
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...payload })
+    });
+    // no-cors returns opaque response — assume success if no throw
+    return { ok: true };
+  } catch(e) {
+    showToast('❌ Error al escribir: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
 const SHEET_ID = '1FLMEqXf3enIMDr8fziXFvnEKwnlhhiUd6JYjmQentOQ';
 const COACH_COLORS = {
   'Gianella':'#f97316','Analu':'#3b82f6','Cristopher':'#22c55e',
@@ -1794,6 +2041,7 @@ function renderPayments() {
       <td>${statusBadgeHtml}</td>
       <td class="mono muted" style="font-size:11px">${tel || '—'}</td>
       <td>${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank">💬 WhatsApp</a>` : '<span class="muted" style="font-size:11px">sin teléfono</span>'}</td>
+      <td><button class="tbl-btn" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;white-space:nowrap" onclick="openPayConfirm(${JSON.stringify(s)})">✅ Pagado</button></td>
     </tr>`;
   }).join('');
 }
@@ -1887,6 +2135,266 @@ function showToast(msg) {
   t.style.transform = 'translateY(0)';
   clearTimeout(t._tid);
   t._tid = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 3000);
+}
+
+
+/* ═══════════════════════════ PAYMENT CONFIRM ══════════════════ */
+let _payStudent = null;
+
+function openPayConfirm(s) {
+  _payStudent = s;
+  document.getElementById('pc-alumno').value = s.nombre || '';
+  document.getElementById('pc-monto').value = s.tarifa || s.monto || '';
+  document.getElementById('pc-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pc-ref').value = '';
+  document.getElementById('pc-sync-status').textContent = '';
+  // Set programa from discipline
+  const disc = (s.disc || s.disciplina || 'RUNNING').toUpperCase();
+  const progSel = document.getElementById('pc-programa');
+  for (const opt of progSel.options) { if (opt.value === disc) { progSel.value = disc; break; } }
+  document.getElementById('payConfirmModal').classList.remove('hidden');
+}
+
+function closePay() {
+  document.getElementById('payConfirmModal').classList.add('hidden');
+  _payStudent = null;
+}
+
+async function confirmPay() {
+  const alumno   = document.getElementById('pc-alumno').value.trim();
+  const monto    = parseFloat(document.getElementById('pc-monto').value);
+  const tipo     = document.getElementById('pc-tipo').value;
+  const programa = document.getElementById('pc-programa').value;
+  const metodo   = document.getElementById('pc-metodo').value;
+  const fecha    = document.getElementById('pc-fecha').value;
+  const ref      = document.getElementById('pc-ref').value.trim();
+  const statusEl = document.getElementById('pc-sync-status');
+
+  if (!alumno || !monto || !fecha) {
+    showToast('⚠️ Completa alumno, monto y fecha');
+    return;
+  }
+
+  statusEl.textContent = '⏳ Guardando en Google Sheet...';
+  statusEl.className = 'sync-pending';
+
+  // Format date as DD/MM/YYYY for the sheet
+  const [y,m,d] = fecha.split('-');
+  const fechaSheet = `${d}/${m}/${y}`;
+  const today = new Date();
+  const fechaReg = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  // Write to CONTROL DE INGRESOS sheet
+  const result = await writeToSheet('addIngreso', {
+    fechaRegistro: fechaReg,
+    nombreAlumno: alumno,
+    tipoIngreso: tipo,
+    programa: programa,
+    fechaPago: fechaSheet,
+    monto: monto,
+    metodoPago: metodo,
+    referencia: ref,
+    fechaInicioPlan: fechaSheet,
+    observaciones: ''
+  });
+
+  if (result.ok) {
+    statusEl.textContent = '✅ Guardado en Google Sheet';
+    statusEl.className = 'sync-ok';
+    // Also save locally
+    const payments = getLocalPayments();
+    payments.push({ id:'P-'+Date.now(), alumno, monto, tipo, metodo, fecha, referencia:ref, createdAt:new Date().toISOString() });
+    saveLocalPayments(payments);
+    // Update saldo
+    setSaldo(getSaldo() - monto);
+    renderLocalPaymentsTable();
+    renderFinanceExtended();
+    showToast(`✅ Pago de ${fMoney(monto)} registrado para ${alumno}`);
+    setTimeout(() => {
+      closePay();
+      renderPayments();
+    }, 1200);
+  } else {
+    if (result.error === 'no_url') {
+      statusEl.textContent = '⚠️ Guardado localmente (configura Apps Script para sincronizar con Sheet)';
+      statusEl.className = 'sync-err';
+      // Save locally anyway
+      const payments = getLocalPayments();
+      payments.push({ id:'P-'+Date.now(), alumno, monto, tipo, metodo, fecha, referencia:ref, createdAt:new Date().toISOString() });
+      saveLocalPayments(payments);
+      setSaldo(getSaldo() - monto);
+      renderLocalPaymentsTable();
+      renderFinanceExtended();
+      showToast(`💾 Guardado localmente — configura Apps Script para sync`);
+      setTimeout(closePay, 1500);
+    } else {
+      statusEl.textContent = '❌ Error al guardar. Guardado localmente.';
+      statusEl.className = 'sync-err';
+    }
+  }
+}
+
+/* ═══════════════════════════ FINANCE WRITE ════════════════════ */
+let _finTab = 'ingreso';
+
+function openFinWrite() {
+  document.getElementById('finWriteModal').classList.remove('hidden');
+  document.getElementById('fi-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fg-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fin-write-status').textContent = '';
+  // Populate alumno datalist
+  const dl = document.getElementById('fi-alumno-list');
+  if (dl) dl.innerHTML = allStudents().filter(s=>(s.estado||'').toUpperCase()==='ACTIVO')
+    .map(s=>`<option value="${s.nombre}"></option>`).join('');
+  setFinTab('ingreso');
+}
+
+function closeFinWrite() {
+  document.getElementById('finWriteModal').classList.add('hidden');
+}
+
+function setFinTab(tab) {
+  _finTab = tab;
+  document.getElementById('fin-ingreso-fields').style.display = tab==='ingreso' ? 'grid' : 'none';
+  document.getElementById('fin-gasto-fields').style.display = tab==='gasto' ? 'grid' : 'none';
+  document.getElementById('ftab-ingreso').classList.toggle('active', tab==='ingreso');
+  document.getElementById('ftab-gasto').classList.toggle('active', tab==='gasto');
+}
+
+async function submitFinWrite() {
+  const statusEl = document.getElementById('fin-write-status');
+  const today = new Date();
+  const fechaReg = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  if (_finTab === 'ingreso') {
+    const alumno   = document.getElementById('fi-alumno').value.trim();
+    const monto    = parseFloat(document.getElementById('fi-monto').value);
+    const tipo     = document.getElementById('fi-tipo').value;
+    const programa = document.getElementById('fi-programa').value;
+    const metodo   = document.getElementById('fi-metodo').value;
+    const fecha    = document.getElementById('fi-fecha').value;
+    const ref      = document.getElementById('fi-ref').value.trim();
+    if (!alumno || !monto || !fecha) { showToast('⚠️ Completa alumno, monto y fecha'); return; }
+    const [y,m,d] = fecha.split('-');
+    const fechaSheet = `${d}/${m}/${y}`;
+    statusEl.textContent = '⏳ Guardando en CONTROL DE INGRESOS...';
+    statusEl.className = 'sync-pending';
+    const r = await writeToSheet('addIngreso', {
+      fechaRegistro: fechaReg, nombreAlumno: alumno, tipoIngreso: tipo,
+      programa, fechaPago: fechaSheet, monto, metodoPago: metodo,
+      referencia: ref, fechaInicioPlan: fechaSheet, observaciones: ''
+    });
+    if (r.ok || r.error==='no_url') {
+      const payments = getLocalPayments();
+      payments.push({ id:'P-'+Date.now(), alumno, monto, tipo, metodo, fecha, referencia:ref, createdAt:new Date().toISOString() });
+      saveLocalPayments(payments);
+      setSaldo(getSaldo() - monto);
+      renderLocalPaymentsTable(); renderFinanceExtended();
+      statusEl.textContent = r.ok ? '✅ Guardado en Google Sheet' : '💾 Guardado localmente';
+      statusEl.className = r.ok ? 'sync-ok' : 'sync-err';
+      showToast(`✅ Ingreso de ${fMoney(monto)} registrado`);
+      setTimeout(closeFinWrite, 1200);
+    }
+  } else {
+    const detalle = document.getElementById('fg-detalle').value.trim();
+    const monto   = parseFloat(document.getElementById('fg-monto').value);
+    const cat     = document.getElementById('fg-cat').value;
+    const fecha   = document.getElementById('fg-fecha').value;
+    const medio   = document.getElementById('fg-medio').value;
+    if (!detalle || !monto || !fecha) { showToast('⚠️ Completa detalle, monto y fecha'); return; }
+    const [y,m,d] = fecha.split('-');
+    const fechaSheet = `${d}/${m}/${y}`;
+    statusEl.textContent = '⏳ Guardando en CAJA...';
+    statusEl.className = 'sync-pending';
+    const r = await writeToSheet('addGasto', {
+      fecha: fechaSheet, mes: new Date(fecha).toLocaleDateString('es-PE',{month:'long'}).toUpperCase(),
+      tipo: 'Gasto', categoria: cat, detalle, medio, gasto: monto
+    });
+    if (r.ok || r.error==='no_url') {
+      // Update local saldo
+      setSaldo(getSaldo() - monto);
+      renderFinanceExtended();
+      statusEl.textContent = r.ok ? '✅ Guardado en Google Sheet' : '💾 Guardado localmente';
+      statusEl.className = r.ok ? 'sync-ok' : 'sync-err';
+      showToast(`✅ Gasto de ${fMoney(monto)} registrado`);
+      setTimeout(closeFinWrite, 1200);
+    }
+  }
+}
+
+/* ═══════════════════════════ APPS SCRIPT CONFIG ════════════════ */
+function openScript() {
+  // Show the Apps Script code the user needs to deploy
+  const code = `function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.openById('1FLMEqXf3enIMDr8fziXFvnEKwnlhhiUd6JYjmQentOQ');
+  
+  if (data.action === 'addIngreso') {
+    const sh = ss.getSheetByName('CONTROL DE INGRESOS');
+    sh.appendRow([
+      data.fechaRegistro, data.nombreAlumno, data.tipoIngreso,
+      data.programa, data.fechaPago, data.monto, data.metodoPago,
+      data.referencia, data.fechaInicioPlan, data.observaciones
+    ]);
+  }
+  
+  if (data.action === 'addGasto') {
+    const sh = ss.getSheetByName('CAJA');
+    sh.appendRow([
+      data.fecha, data.mes, data.tipo, data.categoria,
+      data.detalle, data.medio, null, data.gasto, null
+    ]);
+  }
+  
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true,status:'MyPacerPro Script activo'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+  document.getElementById('scriptCode').textContent = code;
+  const saved = localStorage.getItem('mpp_script_url') || '';
+  document.getElementById('scriptUrl').value = saved;
+  document.getElementById('script-test-result').textContent = '';
+  document.getElementById('scriptModal').classList.remove('hidden');
+}
+
+function closeScript() {
+  document.getElementById('scriptModal').classList.add('hidden');
+}
+
+function saveScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    showToast('⚠️ URL inválida — debe ser de script.google.com');
+    return;
+  }
+  localStorage.setItem('mpp_script_url', url);
+  APPS_SCRIPT_URL = url;
+  document.getElementById('script-test-result').textContent = '✅ URL guardada';
+  document.getElementById('script-test-result').className = 'sync-ok';
+  showToast('✅ Apps Script URL guardada');
+  setTimeout(closeScript, 800);
+}
+
+async function testScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  const el = document.getElementById('script-test-result');
+  if (!url) { el.textContent = '⚠️ Ingresa una URL primero'; return; }
+  el.textContent = '⏳ Probando conexión...'; el.className = 'sync-pending';
+  try {
+    // GET request to test (no-cors won't return body but no error = deployed)
+    await fetch(url, { method:'GET', mode:'no-cors' });
+    el.textContent = '✅ Conexión exitosa — el script responde';
+    el.className = 'sync-ok';
+  } catch(e) {
+    el.textContent = '❌ No responde: ' + e.message;
+    el.className = 'sync-err';
+  }
 }
 
 /* ═══════════════════════════ AUTH & ACCESS LOG ════════════════ */
