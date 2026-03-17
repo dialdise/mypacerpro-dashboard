@@ -26,28 +26,43 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .loader-status{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;min-height:16px}
 
 /* ── SIDEBAR ── */
-#sidebar{position:fixed;left:0;top:0;bottom:0;width:60px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:stretch;padding:0;z-index:100;transition:width .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
-#sidebar:hover{width:210px}
-.sidebar-brand{display:flex;align-items:center;justify-content:center;gap:10px;padding:20px 0 16px;white-space:nowrap;overflow:hidden;width:100%}
-#sidebar:hover .sidebar-brand{justify-content:flex-start;padding-left:18px}
-.sidebar-brand .icon{font-size:22px;flex-shrink:0;width:24px;text-align:center}
-.sidebar-brand .text{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:3px;opacity:0;transition:opacity .2s;white-space:nowrap}
+#sidebar{position:fixed;left:0;top:0;bottom:0;width:60px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;z-index:100;transition:width .28s cubic-bezier(.4,0,.2,1);overflow:hidden}
+#sidebar:hover{width:214px}
+/* Brand */
+.sidebar-brand{display:flex;align-items:center;height:60px;padding-left:0;white-space:nowrap;overflow:hidden;flex-shrink:0}
+.sidebar-brand .icon{font-size:22px;min-width:60px;text-align:center;flex-shrink:0}
+.sidebar-brand .text{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:3px;opacity:0;transition:opacity .2s;white-space:nowrap}
 #sidebar:hover .sidebar-brand .text{opacity:1}
-.sidebar-divider{width:calc(100% - 24px);height:1px;background:var(--border);margin:4px 12px}
-.nav-item{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px 0;cursor:pointer;border-radius:8px;width:calc(100% - 16px);margin:2px 8px;transition:all .15s;white-space:nowrap;overflow:hidden;color:var(--muted)}
-#sidebar:hover .nav-item{justify-content:flex-start;padding:11px 18px}
-.nav-item:hover{background:var(--subtle);color:var(--text)}
+.sidebar-divider{height:1px;background:var(--border);margin:4px 10px}
+/* Nav items — icon always at fixed 60px slot */
+.nav-item,.sync-btn,.log-btn,.logout-btn{
+  display:flex;align-items:center;height:44px;padding:0;margin:2px 6px;
+  border-radius:8px;cursor:pointer;transition:all .15s;
+  white-space:nowrap;overflow:hidden;color:var(--muted);
+  background:none;border:none;font-family:inherit;width:calc(100% - 12px);
+  text-decoration:none;
+}
+.nav-item:hover,.log-btn:hover{background:var(--subtle);color:var(--text)}
 .nav-item.active{background:rgba(249,115,22,.15);color:var(--accent)}
-.nav-item .icon{font-size:18px;flex-shrink:0;width:24px;text-align:center;display:flex;align-items:center;justify-content:center}
-.nav-item .label{font-size:13px;font-weight:500;opacity:0;transition:opacity .15s;white-space:nowrap}
-#sidebar:hover .nav-item .label{opacity:1}
+.sync-btn{background:rgba(59,130,246,.08);color:var(--accent2);font-size:13px;font-weight:500;margin:3px 6px 4px}
+.sync-btn:hover{background:rgba(59,130,246,.18)}
+.logout-btn{background:rgba(239,68,68,.07);color:var(--danger);margin:3px 6px 12px}
+.logout-btn:hover{background:rgba(239,68,68,.15)}
+/* Icon slot: always 48px wide, centered */
+.nav-item .icon,.sync-btn .icon,.log-btn .icon,.logout-btn .icon{
+  display:flex;align-items:center;justify-content:center;
+  min-width:48px;width:48px;font-size:18px;flex-shrink:0;
+}
+.sync-btn .icon{font-size:15px}
+/* Label hidden until hover */
+.nav-item .label,.sync-btn .label,.log-btn .label,.logout-btn .label{
+  font-size:13px;font-weight:500;opacity:0;transition:opacity .15s;white-space:nowrap;
+}
+#sidebar:hover .nav-item .label,
+#sidebar:hover .sync-btn .label,
+#sidebar:hover .log-btn .label,
+#sidebar:hover .logout-btn .label{opacity:1}
 .sidebar-spacer{flex:1}
-.sync-btn{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px 0;cursor:pointer;border-radius:8px;width:calc(100% - 16px);margin:4px 8px 16px;background:rgba(59,130,246,.1);color:var(--accent2);font-size:13px;font-weight:500;border:none;font-family:inherit;white-space:nowrap;overflow:hidden;transition:all .15s}
-#sidebar:hover .sync-btn{justify-content:flex-start;padding:11px 18px}
-.sync-btn:hover{background:rgba(59,130,246,.2)}
-.sync-btn .icon{font-size:15px;flex-shrink:0;width:24px;text-align:center;display:flex;align-items:center;justify-content:center}
-.sync-btn .label{opacity:0;transition:opacity .15s}
-#sidebar:hover .sync-btn .label{opacity:1}
 
 /* ── LOGIN OVERLAY ── */
 #loginOverlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;gap:0}
@@ -84,18 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .log-badge.fail{background:rgba(239,68,68,.15);color:#f87171}
 .log-badge.logout{background:rgba(107,114,128,.15);color:#9ca3af}
 .log-empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 0}
-.log-btn{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px 0;cursor:pointer;border-radius:8px;width:calc(100% - 16px);margin:2px 8px;transition:all .15s;white-space:nowrap;overflow:hidden;color:var(--muted);background:none;border:none;font-family:inherit}
-#sidebar:hover .log-btn{justify-content:flex-start;padding:11px 18px}
-.log-btn:hover{background:var(--subtle);color:var(--text)}
-.log-btn .icon{font-size:18px;flex-shrink:0;width:24px;text-align:center;display:flex;align-items:center;justify-content:center}
-.log-btn .label{font-size:13px;font-weight:500;opacity:0;transition:opacity .15s}
-#sidebar:hover .log-btn .label{opacity:1}
-.logout-btn{display:flex;align-items:center;justify-content:center;gap:12px;padding:11px 0;cursor:pointer;border-radius:8px;width:calc(100% - 16px);margin:2px 8px;transition:all .15s;white-space:nowrap;overflow:hidden;color:var(--danger);background:rgba(239,68,68,.08);border:none;font-family:inherit}
-#sidebar:hover .logout-btn{justify-content:flex-start;padding:11px 18px}
-.logout-btn:hover{background:rgba(239,68,68,.15)}
-.logout-btn .icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
-.logout-btn .label{font-size:13px;font-weight:500;opacity:0;transition:opacity .15s}
-#sidebar:hover .logout-btn .label{opacity:1}
+/* log-btn and logout-btn styles merged into nav-item block above */
 
 /* ── MAIN ── */
 #main{margin-left:60px;padding:28px 28px 60px;min-height:100vh}
