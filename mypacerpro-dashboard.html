@@ -1844,7 +1844,7 @@ function renderStudentTable(students) {
     return;
   }
   tbody.innerHTML = students.map(s => {
-    const id = s.dni || s.id || '—';
+    const id = s.id || s.dni || '—';  // prefer local id (L-...) over dni
     const nombre = s.nombre || '—';
     const coach = s.coach || '—';
     const disc = s.disc || s.disciplina || '—';
@@ -1863,9 +1863,9 @@ function renderStudentTable(students) {
       <td class="mono" style="font-size:12px">${diaPago && diaPago!=='—' ? 'Día '+diaPago : '—'}</td>
       <td class="muted" style="font-size:11px">${ingreso}</td>
       <td><div class="tbl-actions">
-        <button class="tbl-btn" onclick="editStudent(${JSON.stringify(id)})">✏️</button>
+        <button class="tbl-btn" data-sid="${encodeURIComponent(String(id))}" onclick="editStudent(decodeURIComponent(this.dataset.sid))">✏️</button>
         ${tel ? `<a class="wa-btn" href="https://wa.me/51${tel}" target="_blank">📱</a>` : ''}
-        ${s._source === 'local' ? `<button class="tbl-btn danger" onclick="deleteLocalStudent(${JSON.stringify(id)})" title="Eliminar (solo local)">🗑️</button>` : `<button class="tbl-btn" style="opacity:.35;cursor:default" title="Solo alumnos nuevos (local) pueden eliminarse">🗑️</button>`}
+        ${s._source === 'local' ? `<button class="tbl-btn danger" data-sid="${encodeURIComponent(String(id))}" onclick="deleteLocalStudent(decodeURIComponent(this.dataset.sid))" title="Eliminar (solo local)">🗑️</button>` : `<button class="tbl-btn" style="opacity:.35;cursor:default" title="Alumnos del Sheet se editan en Google Sheets">🗑️</button>`}
       </div></td>
     </tr>`;
   }).join('');
@@ -1887,7 +1887,12 @@ function openStudentModal(data) {
 
 function editStudent(id) {
   const students = allStudents();
-  const s = students.find(st => String(st.dni || st.id) === String(id));
+  // Match by id, dni, or either field — handles both sheet and local students
+  const s = students.find(st =>
+    String(st.id) === String(id) ||
+    String(st.dni) === String(id) ||
+    String(st.id || st.dni) === String(id)
+  );
   if (!s) return;
   _editingStudentId = String(id);
   document.getElementById('studentModalTitle').textContent = 'Editar Alumno';
@@ -2011,7 +2016,7 @@ function saveStudent() {
 function deleteLocalStudent(id) {
   if (!confirm('¿Eliminar este alumno del registro local?\nNota: Solo se elimina del dashboard, NO del Google Sheet.')) return;
   const local = getLocalStudents();
-  const updated = local.filter(l => String(l.id) !== String(id));
+  const updated = local.filter(l => String(l.id) !== String(id) && String(l.dni) !== String(id));
   saveLocalStudents(updated);
   renderStudents();
   showToast('🗑️ Alumno eliminado del registro local');
@@ -2069,7 +2074,9 @@ function renderPayments() {
     return;
   }
 
-  tbody.innerHTML = results.map(s => {
+  window._payResults = results;
+  let _pi = 0;
+  tbody.innerHTML = results.map(s => { const _pidx = _pi++;
     const tel = s.celular ? String(s.celular) : '';
     const tel51 = tel ? '51' + tel.replace(/\D/g,'') : '';
     const monto = s.tarifa || s.monto || 0;
@@ -2104,7 +2111,7 @@ function renderPayments() {
       <td>${statusBadgeHtml}</td>
       <td class="mono muted" style="font-size:11px">${tel || '—'}</td>
       <td>${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank">💬 WhatsApp</a>` : '<span class="muted" style="font-size:11px">sin teléfono</span>'}</td>
-      <td><button class="tbl-btn" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;white-space:nowrap" onclick="openPayConfirm(${JSON.stringify(s)})">✅ Pagado</button></td>
+      <td><button class="tbl-btn" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;white-space:nowrap" data-pidx="${_pidx}" onclick="openPayConfirm(_payResults[+this.dataset.pidx])">✅ Pagado</button></td>
     </tr>`;
   }).join('');
 }
