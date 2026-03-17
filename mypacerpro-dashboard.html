@@ -18,7 +18,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 /* ── LOADER ── */
 #loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;transition:opacity .4s}
-#loader.hidden{opacity:0;pointer-events:none}
+#loader.hidden{opacity:0;pointer-events:none;display:none!important}
 .loader-logo{font-family:'Bebas Neue',sans-serif;font-size:56px;color:var(--accent);letter-spacing:6px}
 .loader-tagline{color:var(--muted);font-size:12px;letter-spacing:3px;text-transform:uppercase}
 .loader-bar{width:220px;height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
@@ -896,7 +896,7 @@ function fetchSheet(name) {
 
 /* ═══════════════════════════ LOAD ALL ═════════════════════════ */
 async function loadAll(manual=false) {
-  if (manual) { document.getElementById('loader').style.display='flex'; document.getElementById('loader').style.opacity='1'; }
+  if (manual) { const ld=document.getElementById('loader'); ld.className=''; ld.style.display='flex'; ld.style.opacity='1'; }
   document.getElementById('syncIcon').className='spin';
 
   const setL = (p,m) => { document.getElementById('lFill').style.width=p+'%'; document.getElementById('lStatus').textContent=m; };
@@ -919,8 +919,12 @@ async function loadAll(manual=false) {
     const base = await fetchSheet('BASE ALUMNOS');
     DB.base = base.rows.slice(1).map(r=>({
       dni:r[0],nombre:r[1],fechaNac:pgDate(r[2]),celular:r[3],
-      correo:r[4],coach:r[5],disc:r[6],estado:r[7],tarifa:r[8]}))
-      .filter(r=>r.nombre);
+      correo:r[4],coach:r[5],disc:r[6],disciplina:r[6],estado:r[7],
+      tarifa:r[8],monto:r[8],
+      diaPago:r[9]!=null?parseInt(r[9]):null,
+      fi:pgDate(r[10]),fechaIngreso:r[10]
+    }))
+    .filter(r=>r.nombre);
 
     setL(68,'Cargando CAJA...');
     const caja = await fetchSheet('CAJA');
@@ -1513,7 +1517,7 @@ function setSaldo(v) { localStorage.setItem(LS_SALDO, String(v)); }
 
 /* merge sheet base + local students */
 function allStudents() {
-  const sheet = DB.base.filter(b => b.nombre);
+  const sheet = DB.base.filter(b => b.nombre).map(s=>({...s,id:String(s.dni||''),_source:'sheet'}));
   const local = getLocalStudents();
   // local ones have id starting with 'L-'
   const sheetIds = new Set(sheet.map(s => String(s.dni)));
@@ -1600,7 +1604,7 @@ function renderStudentTable(students) {
     const estado = s.estado || 'ACTIVO';
     const monto = s.tarifa || s.monto || 0;
     const diaPago = s.diaPago || s.dia_pago || '—';
-    const ingreso = s.fi ? fDate(s.fi) : (s.fechaIngreso ? fDate(new Date(s.fechaIngreso)) : '—');
+    const ingreso = s.fi ? fDate(s.fi) : (s.fechaIngreso && s.fechaIngreso.includes ? fDate(pgDate(s.fechaIngreso)) : '—');
     const tel = s.celular || '';
     return `<tr>
       <td class="mono muted" style="font-size:11px">${id}</td>
@@ -1609,7 +1613,7 @@ function renderStudentTable(students) {
       <td><span class="badge bg-blue">${disc}</span></td>
       <td>${statusBadge(estado)}</td>
       <td class="mono green">${monto ? fMoney(monto) : '—'}</td>
-      <td class="mono" style="font-size:12px">${diaPago}</td>
+      <td class="mono" style="font-size:12px">${diaPago && diaPago!=='—' ? 'Día '+diaPago : '—'}</td>
       <td class="muted" style="font-size:11px">${ingreso}</td>
       <td><div class="tbl-actions">
         <button class="tbl-btn" onclick="editStudent(${JSON.stringify(id)})">✏️</button>
@@ -1777,7 +1781,7 @@ function renderPayments() {
 
     // WA message
     const waMsg = encodeURIComponent(
-      `Hola ${nombre.split(' ')[0]} 👋, te recordamos que tu próxima renovación del plan en *MyPacerPro* vence el día *${dp}*. El monto es de *${fMoney(monto)}*. Para cualquier consulta escríbenos 🏃‍♂️`
+      `Hola ${nombre.split(' ')[0]} 👋, te recordamos que tu próxima renovación del plan en *MyPacerPro* vence el día *${dpLabel}*. El monto es de *${fMoney(monto)}*. Para cualquier consulta escríbenos 🏃‍♂️`
     );
     const waLink = tel51 ? `https://wa.me/${tel51}?text=${waMsg}` : '';
 
@@ -1785,7 +1789,7 @@ function renderPayments() {
       <td style="font-weight:500">${nombre}</td>
       <td><span style="color:${cc(coach)};font-weight:600;font-size:12px">${coach}</span></td>
       <td class="mono green">${fMoney(monto)}</td>
-      <td class="mono">${dp}</td>
+      <td class="mono">${dpLabel}</td>
       <td>${statusBadgeHtml}</td>
       <td class="mono muted" style="font-size:11px">${tel || '—'}</td>
       <td>${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank">💬 WhatsApp</a>` : '<span class="muted" style="font-size:11px">sin teléfono</span>'}</td>
@@ -1952,8 +1956,11 @@ function doLogin() {
     errEl.textContent = '';
     attEl.textContent = '';
     document.getElementById('loginOverlay').classList.add('hidden');
-    // Update header
-    document.getElementById('ov-updated').textContent = 'Sesión: ' + user;
+    // Show loader then load data
+    const ld = document.getElementById('loader');
+    ld.className = '';
+    ld.style.display = 'flex';
+    ld.style.opacity = '1';
     loadAll();
   } else {
     failedAttempts++;
@@ -1987,6 +1994,7 @@ function doLogout() {
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginAttempts').textContent = '';
+  document.getElementById('loader').className = 'hidden';
   document.getElementById('loginOverlay').classList.remove('hidden');
 }
 
@@ -2040,9 +2048,13 @@ function checkSession() {
 }
 
 /* ═══════════════════════════ INIT ═════════════════════════════ */
-if (!checkSession()) {
-  // Show login — data loads after successful auth
-  document.getElementById('loader').style.display = 'none';
+const _hasSession = checkSession();
+if (_hasSession) {
+  // Already logged in — load data immediately
+  loadAll();
+} else {
+  // Show login screen — hide loader, wait for doLogin to call loadAll
+  document.getElementById('loader').className = 'hidden';
 }
 </script>
 </body>
