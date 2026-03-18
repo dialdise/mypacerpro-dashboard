@@ -1492,13 +1492,17 @@ function renderOverview(){
   mel.textContent='S/'+Math.abs(margin).toLocaleString('es-PE')+(margin<0?' (-)':'');
   mel.style.color=margin>=0?'var(--accent3)':'var(--danger)';
 
+
+
+
+
   // KPI avg age
   const avgAge = calcAvgAge(DB.base.filter(b => (b.estado||'').toUpperCase() === 'ACTIVO'));
   const ageEl = document.getElementById('k-avg-age');
   if (ageEl) ageEl.textContent = avgAge ? String(avgAge) : '—';
 
-  // KPI Sin Pago = vencidos (diaPago passed 1-15 days ago)
-  const _todayDay = today.getDate();
+  // KPI Sin Pago = vencidos (overdue by 1-15 days)
+  const _todayDay = now.getDate();
   const _vencidos = DB.base.filter(b => {
     if ((b.estado||'').toUpperCase() !== 'ACTIVO') return false;
     if (isAuspicio(b)) return false;
