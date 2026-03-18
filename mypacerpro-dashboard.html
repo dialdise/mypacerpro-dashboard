@@ -1712,7 +1712,8 @@ function renderBirthdays(){
 
   function bdayCard(b,extra=''){
     const color=avatarBg(b.nombre);
-    const age=today.getFullYear()-b.fechaNac.getFullYear();
+    // Age they WILL TURN this year (their birthday year subtracted from current year)
+    const ageThisYear = today.getFullYear() - b.fechaNac.getFullYear();
     return `<div class="bday-item">
       <div class="bday-avatar" style="background:${color}22;color:${color}">${initials(b.nombre)}</div>
       <div class="bday-info">
