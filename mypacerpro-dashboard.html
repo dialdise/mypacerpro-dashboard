@@ -1331,7 +1331,8 @@ async function loadAll(manual=false) {
       correo:r[4],coach:r[5],disc:r[6],disciplina:r[6],estado:r[7],
       tarifa:r[8],monto:r[8],
       diaPago:r[9]!=null?parseInt(r[9]):null,
-      fi:pgDate(r[10]),fechaIngreso:r[10]
+      fi:pgDate(r[10]),fechaIngreso:r[10],
+      _rowDni:r[0]!=null?String(r[0]).trim():''
     }))
     .filter(r=>r.nombre);
 
@@ -1957,7 +1958,16 @@ function setSaldo(v) { localStorage.setItem(LS_SALDO, String(v)); }
 /* merge sheet base + local students */
 function allStudents() {
   // Use DNI+DISC as unique composite key — same person can have 2 disciplines
-  const makeKey = s => String(s.dni||s.id||'') + '|' + String(s.disc||s.disciplina||'');
+  // Composite key: DNI|DISC when DNI exists, NOMBRE|DISC when DNI is null
+  const makeKey = s => {
+    const dniPart = (s._rowDni != null && String(s._rowDni).trim() !== '')
+      ? String(s._rowDni).trim()
+      : (s.dni != null && String(s.dni).trim() !== '')
+        ? String(s.dni).trim()
+        : '__nombre__' + String(s.nombre || '').trim(); // unique fallback
+    const discPart = String(s.disc || s.disciplina || '').trim();
+    return dniPart + '|' + discPart;
+  };
 
   const sheet = DB.base.filter(b => b.nombre).map(s=>({
     ...s,
@@ -2088,8 +2098,11 @@ function editStudent(id) {
   // Match by composite id (DNI|DISC) or local id (L-...) or plain DNI fallback
   const s = students.find(st =>
     String(st.id) === String(id) ||
-    String(st._rowDni) === String(id) ||
-    String(st.dni) === String(id)
+    String(st._rowDni||'') === String(id) ||
+    String(st.dni||'') === String(id) ||
+    (id.startsWith('__nombre__') && (
+      '__nombre__' + String(st.nombre||'').trim() + '|' + String(st.disc||'').trim() === String(id)
+    ))
   );
   if (!s) return;
   _editingStudentId = String(id);
@@ -2228,7 +2241,16 @@ function saveStudent() {
 function deleteLocalStudent(id) {
   // Find the student first to get their details
   const students = allStudents();
-  const s = students.find(st => String(st.id) === String(id) || String(st.dni) === String(id));
+  // Match by composite id, DNI, _rowDni, or __nombre__ key for no-DNI students
+  const s = students.find(st =>
+    String(st.id) === String(id) ||
+    String(st._rowDni||'') === String(id) ||
+    String(st.dni||'') === String(id) ||
+    (id.startsWith('__nombre__') && (
+      '__nombre__' + String(st.nombre||'').trim() + '|' + String(st.disc||'').trim()
+      === String(id)
+    ))
+  );
   const name = s ? s.nombre : id;
   const isSheetStudent = s && s._source !== 'local';
 
@@ -2242,7 +2264,12 @@ function deleteLocalStudent(id) {
   const local = getLocalStudents();
   const updated = local.filter(l => {
     if (String(l.id) === String(id)) return false;
-    if (id.includes('|')) {
+    if (id.startsWith('__nombre__')) {
+      // No-DNI match: compare nombre+disc
+      const nombrePart = id.replace('__nombre__','').split('|')[0];
+      const discPart = id.includes('|') ? id.split('|').slice(1).join('|') : '';
+      if (String(l.nombre||'').trim() === nombrePart && String(l.disc||l.disciplina||'').trim() === discPart) return false;
+    } else if (id.includes('|')) {
       const [dniPart, discPart] = id.split('|');
       if (String(l.dni) === dniPart && String(l.disc||l.disciplina||'') === discPart) return false;
     }
@@ -2251,9 +2278,15 @@ function deleteLocalStudent(id) {
   saveLocalStudents(updated);
 
   // Also delete from Sheet via Apps Script
-  const dni = id.includes('|') ? id.split('|')[0] : String(s?.dni || id);
-  const disc = id.includes('|') ? id.split('|')[1] : (s?.disc || s?.disciplina || '');
-  writeToSheet('deleteAlumno', { dni, disciplina: disc, nombre: name })
+  // Extract DNI: for __nombre__ keyed students DNI is null
+  const dniRaw = id.startsWith('__nombre__') ? null
+    : (s?._rowDni || (id.includes('|') ? id.split('|')[0] : String(s?.dni || '')));
+  const disc = id.includes('|') ? id.split('|').slice(1).join('|') : (s?.disc || s?.disciplina || '');
+  writeToSheet('deleteAlumno', {
+    dni: dniRaw || null,
+    disciplina: disc,
+    nombre: name  // Apps Script uses nombre as fallback when DNI is null
+  })
     .then(r => {
       if (r.ok) showToast(`🗑️ "${name}" eliminado del Sheet`);
       else showToast(`🗑️ "${name}" eliminado localmente`);
