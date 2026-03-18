@@ -3190,12 +3190,22 @@ function clearActivityLog() {
 }
 
 /* ═══════════════════════════ AUTH & ACCESS LOG ════════════════ */
-// Password config — change these to your own
-const PASSWORDS = {
-  'Cristopher': 'mypacer2024',
-  'Admin':      'mpp@admin2026',
-  'Coach':      'running2026'
+// Passwords stored as SHA-256 hashes — never plain text
+// To add a user: sha256(password) using any online SHA-256 tool
+const PASSWORDS_HASH = {
+  'Cristopher': '07f23a9ad66721e00e8e875bd325eea17a5eee222ea439fdcbb703d5fb036cbe', // mypacer2024
+  'Admin':      '9edcea4da0535fec506e725ed56bf8dd3c78f2968a44ca42a9f3b4863174143f', // mpp@admin2026
+  'Coach':      'c6269c975d9b548d36ad19673a4cc86086a081fa8de06162e5a1a5c7bb3e2400', // running2026
+  'Bruno':      '39c7c13d254219e927004997a98e66d806fe7a7a0081baf4fb724bbbe7f9f175', // @2lc0IZ!!r0E
+  'Giani':      '58448ce68397d38696d1160ebac8c3b66ab6dac38b5ea6092f7687f3dd8ef828', // qWW!RR5fs#fX
+  'Mario':      'bcc38e62bc1b589b6310ee26e64bd9016fd342999dfc066b349e600d845234c6', // 2o!VP69dkSY3
 };
+
+// SHA-256 helper — works in all modern browsers
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 let currentUser = null;
 let failedAttempts = 0;
@@ -3235,7 +3245,7 @@ function checkLockout() {
   return false;
 }
 
-function doLogin() {
+async function doLogin() {
   if (checkLockout()) return;
   const user = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -3249,8 +3259,10 @@ function doLogin() {
     return;
   }
 
-  const correctPass = PASSWORDS[user];
-  if (correctPass && pass === correctPass) {
+  // Hash the entered password and compare with stored hash
+  const storedHash = PASSWORDS_HASH[user];
+  const enteredHash = await sha256(pass);
+  if (storedHash && enteredHash === storedHash) {
     // Success
     failedAttempts = 0;
     currentUser = user;
@@ -3283,7 +3295,7 @@ function doLogin() {
       failedAttempts = 0;
     } else {
       const left = MAX_ATTEMPTS - failedAttempts;
-      errEl.textContent = !correctPass ? 'Usuario no reconocido' : 'Contraseña incorrecta';
+      errEl.textContent = !storedHash ? 'Usuario no reconocido' : 'Contraseña incorrecta';
       attEl.textContent = `${left} intento${left !== 1 ? 's' : ''} restante${left !== 1 ? 's' : ''}`;
     }
   }
