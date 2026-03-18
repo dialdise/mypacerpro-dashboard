@@ -412,6 +412,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="nav-item" data-page="calendar" onclick="go('calendar')">
     <span class="icon">🗓️</span><span class="label">Calendario</span>
   </div>
+  <div class="nav-item" data-page="activity" onclick="go('activity')">
+    <span class="icon">📋</span><span class="label">Actividad</span>
+  </div>
   <div class="sidebar-spacer"></div>
   <button class="log-btn" onclick="toggleLog()">
     <span class="icon">🔐</span><span class="label">Registro Accesos</span>
@@ -1161,6 +1164,30 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════ ACTIVITY LOG ═══════════════════════════════════ -->
+<div class="page" id="page-activity">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Historial de Actividad</div>
+      <div class="page-subtitle">Registro de todas las acciones realizadas en el dashboard</div>
+    </div>
+    <div class="header-right" style="display:flex;gap:8px">
+      <button class="btn-secondary" onclick="exportActivityLog()">📥 Exportar CSV</button>
+      <button class="btn-secondary" style="color:var(--danger)" onclick="clearActivityLog()">🗑️ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px" id="activity-kpis"></div>
+
+  <!-- Log list -->
+  <div class="chart-box" style="max-height:70vh;overflow-y:auto">
+    <div id="activity-log-list">
+      <div class="bday-empty pulse">Cargando...</div>
+    </div>
+  </div>
+</div>
 
 </main>
 
@@ -2036,7 +2063,7 @@ function renderStudentTable(students) {
       <td><div class="tbl-actions">
         <button class="tbl-btn" data-sid="${encodeURIComponent(String(id))}" onclick="editStudent(decodeURIComponent(this.dataset.sid))">✏️</button>
         ${tel ? `<a class="wa-btn" href="https://wa.me/51${tel}" target="_blank">📱</a>` : ''}
-        ${s._source === 'local' ? `<button class="tbl-btn danger" data-sid="${encodeURIComponent(String(id))}" onclick="deleteLocalStudent(decodeURIComponent(this.dataset.sid))" title="Eliminar (solo local)">🗑️</button>` : `<button class="tbl-btn" style="opacity:.35;cursor:default" title="Alumnos del Sheet se editan en Google Sheets">🗑️</button>`}
+        <button class="tbl-btn danger" data-sid="${encodeURIComponent(String(id))}" onclick="deleteLocalStudent(decodeURIComponent(this.dataset.sid))" title="Eliminar alumno">🗑️</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -2186,6 +2213,12 @@ function saveStudent() {
     });
   }
 
+  // Activity log
+  if (_editingStudentId) {
+    addActivityLog('UPDATE_ALUMNO', `Actualizó alumno: ${record.nombre} (DNI: ${record.dni}) — Monto: S/${record.tarifa}, Coach: ${record.coach}`);
+  } else {
+    addActivityLog('ADD_ALUMNO', `Agregó alumno: ${record.nombre} (DNI: ${record.dni}) — ${record.disc} — Coach: ${record.coach}`);
+  }
   closeStudentModal();
   renderStudents();
   showToast(_editingStudentId ? '✅ Alumno actualizado — sincronizando con Sheet...' : '✅ Alumno agregado — sincronizando con Sheet...');
@@ -2193,7 +2226,19 @@ function saveStudent() {
 
 /* ═══════════════════════════ DELETE LOCAL STUDENT ═════════════ */
 function deleteLocalStudent(id) {
-  if (!confirm('¿Eliminar este alumno del registro local?\nNota: Solo se elimina del dashboard, NO del Google Sheet.')) return;
+  // Find the student first to get their details
+  const students = allStudents();
+  const s = students.find(st => String(st.id) === String(id) || String(st.dni) === String(id));
+  const name = s ? s.nombre : id;
+  const isSheetStudent = s && s._source !== 'local';
+
+  const msg = isSheetStudent
+    ? `¿Eliminar a "${name}" del Google Sheet y del dashboard?\n\n⚠️ Esta acción no se puede deshacer.`
+    : `¿Eliminar a "${name}" del dashboard?\n\nNota: Si fue agregado localmente, también se eliminará del Sheet si fue sincronizado.`;
+
+  if (!confirm(msg)) return;
+
+  // Remove from localStorage
   const local = getLocalStudents();
   const updated = local.filter(l => {
     if (String(l.id) === String(id)) return false;
@@ -2204,8 +2249,21 @@ function deleteLocalStudent(id) {
     return true;
   });
   saveLocalStudents(updated);
+
+  // Also delete from Sheet via Apps Script
+  const dni = id.includes('|') ? id.split('|')[0] : String(s?.dni || id);
+  const disc = id.includes('|') ? id.split('|')[1] : (s?.disc || s?.disciplina || '');
+  writeToSheet('deleteAlumno', { dni, disciplina: disc, nombre: name })
+    .then(r => {
+      if (r.ok) showToast(`🗑️ "${name}" eliminado del Sheet`);
+      else showToast(`🗑️ "${name}" eliminado localmente`);
+    });
+
+  // Add to activity log
+  addActivityLog('DELETE_ALUMNO', `Eliminó alumno: ${name} (DNI: ${dni})`);
+
+  renderStudentsWithAuspicio();
   renderStudents();
-  showToast('🗑️ Alumno eliminado del registro local');
 }
 
 /* ═══════════════════════════ PAYMENTS WEEK ═════════════════════ */
@@ -2480,6 +2538,7 @@ async function confirmPay() {
     statusEl.textContent = '✅ Guardado en Google Sheet';
     statusEl.className = 'sync-ok';
     showToast(`✅ Pago de ${fMoney(monto)} registrado para ${alumno}`);
+  addActivityLog('PAGO_REGISTRADO', `Pago de ${fMoney(monto)} registrado para ${alumno} (${tipo} - ${metodo})`);
   } else {
     statusEl.textContent = '💾 Guardado localmente';
     statusEl.className = 'sync-err';
@@ -2546,7 +2605,8 @@ async function submitFinWrite() {
       renderLocalPaymentsTable(); renderFinanceExtended();
       statusEl.textContent = r.ok ? '✅ Guardado en Google Sheet' : '💾 Guardado localmente';
       statusEl.className = r.ok ? 'sync-ok' : 'sync-err';
-      showToast(`✅ Ingreso de ${fMoney(monto)} registrado`);
+      addActivityLog('ADD_INGRESO', `Ingreso de ${fMoney(monto)} registrado — ${alumno} (${tipo}, ${metodo})`);
+  showToast(`✅ Ingreso de ${fMoney(monto)} registrado`);
       setTimeout(closeFinWrite, 1200);
   } else {
     const detalle = document.getElementById('fg-detalle').value.trim();
@@ -2568,7 +2628,8 @@ async function submitFinWrite() {
       renderFinanceExtended();
       statusEl.textContent = r.ok ? '✅ Guardado en Google Sheet' : '💾 Guardado localmente';
       statusEl.className = r.ok ? 'sync-ok' : 'sync-err';
-      showToast(`✅ Gasto de ${fMoney(monto)} registrado`);
+      addActivityLog('ADD_GASTO', `Gasto de ${fMoney(monto)} registrado — ${detalle} (${cat})`);
+  showToast(`✅ Gasto de ${fMoney(monto)} registrado`);
       setTimeout(closeFinWrite, 1200);
   }
 }
@@ -2715,7 +2776,7 @@ function renderStudentsWithAuspicio() {
         <td class="mono">${s.diaPago ? 'Día '+s.diaPago : '—'}</td>
         <td><div class="tbl-actions">
           <button class="tbl-btn" data-sid="${encodeURIComponent(String(id))}" onclick="editStudent(decodeURIComponent(this.dataset.sid))">✏️</button>
-          ${s._source==='local' ? `<button class="tbl-btn danger" data-sid="${encodeURIComponent(String(id))}" onclick="deleteLocalStudent(decodeURIComponent(this.dataset.sid))">🗑️</button>` : ''}
+          <button class="tbl-btn danger" data-sid="${encodeURIComponent(String(id))}" onclick="deleteLocalStudent(decodeURIComponent(this.dataset.sid))">🗑️</button>
         </div></td>
       </tr>`;
     }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Sin alumnos auspiciados</td></tr>';
@@ -2962,6 +3023,7 @@ function saveEvent() {
     events.push(record);
   }
   saveEvents(events);
+  addActivityLog(_editingEventId ? 'UPDATE_EVENTO' : 'ADD_EVENTO', `${_editingEventId?'Actualizó':'Agregó'} evento: ${nombre} (${fecha})`);
   closeEventModal();
   renderCalendar();
   showToast(`✅ Evento "${nombre}" guardado`);
@@ -2975,6 +3037,123 @@ function deleteEvent() {
   closeEventModal();
   renderCalendar();
   showToast('🗑️ Evento eliminado');
+}
+
+/* ═══════════════════════════ ACTIVITY LOG ═════════════════════ */
+const ACTIVITY_LOG_KEY = 'mpp_activity_log';
+
+function getActivityLog() {
+  try { return JSON.parse(localStorage.getItem(ACTIVITY_LOG_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function addActivityLog(action, detail) {
+  const entries = getActivityLog();
+  const entry = {
+    id: 'AL-' + Date.now(),
+    action,
+    detail,
+    user: sessionStorage.getItem('mpp_user') || 'Admin',
+    timestamp: new Date().toISOString(),
+    ts: Date.now()
+  };
+  entries.unshift(entry); // newest first
+  localStorage.setItem(ACTIVITY_LOG_KEY, JSON.stringify(entries.slice(0, 500))); // keep last 500
+  renderActivityLog();
+  return entry;
+}
+
+function renderActivityKpis() {
+  const el = document.getElementById('activity-kpis');
+  if (!el) return;
+  const entries = getActivityLog();
+  const today = new Date().toDateString();
+  const todayCount = entries.filter(e => new Date(e.timestamp).toDateString() === today).length;
+  const pagos = entries.filter(e => e.action === 'PAGO_REGISTRADO').length;
+  const edits = entries.filter(e => e.action === 'UPDATE_ALUMNO').length;
+  const deletes = entries.filter(e => e.action === 'DELETE_ALUMNO').length;
+  el.innerHTML = `
+    <div class="kpi-card" style="--card-accent:var(--accent2)">
+      <div class="kpi-label">Total Acciones</div>
+      <div class="kpi-value">${entries.length}</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--accent3)">
+      <div class="kpi-label">Hoy</div>
+      <div class="kpi-value">${todayCount}</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--accent)">
+      <div class="kpi-label">Pagos Registrados</div>
+      <div class="kpi-value">${pagos}</div>
+    </div>
+    <div class="kpi-card" style="--card-accent:var(--danger)">
+      <div class="kpi-label">Eliminaciones</div>
+      <div class="kpi-value">${deletes}</div>
+    </div>
+  `;
+}
+
+function renderActivityLog() {
+  const el = document.getElementById('activity-log-list');
+  if (!el) return;
+  const entries = getActivityLog();
+  if (!entries.length) {
+    el.innerHTML = '<div class="bday-empty">Sin actividad registrada</div>';
+    return;
+  }
+  const actionColors = {
+    'PAGO_REGISTRADO':  'var(--accent3)',
+    'DELETE_ALUMNO':    'var(--danger)',
+    'ADD_ALUMNO':       'var(--accent2)',
+    'UPDATE_ALUMNO':    'var(--warning)',
+    'ADD_INGRESO':      'var(--accent3)',
+    'ADD_GASTO':        'var(--danger)',
+    'ADD_EVENTO':       'var(--accent4)',
+    'DELETE_EVENTO':    'var(--muted)',
+    'LOGIN':            'var(--muted)',
+  };
+  el.innerHTML = entries.map(e => {
+    const d = new Date(e.timestamp);
+    const timeStr = d.toLocaleString('es-PE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const color = actionColors[e.action] || 'var(--accent)';
+    const icon = {
+      'PAGO_REGISTRADO':'💳','DELETE_ALUMNO':'🗑️','ADD_ALUMNO':'➕',
+      'UPDATE_ALUMNO':'✏️','ADD_INGRESO':'💰','ADD_GASTO':'💸',
+      'ADD_EVENTO':'📅','DELETE_EVENTO':'🗑️','LOGIN':'🔐'
+    }[e.action] || '📋';
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <div style="font-size:18px;flex-shrink:0;margin-top:1px">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.5px">${e.action.replace(/_/g,' ')}</span>
+          <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;flex-shrink:0">${timeStr}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text);margin-top:2px">${e.detail}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">por ${e.user}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportActivityLog() {
+  const entries = getActivityLog();
+  if (!entries.length) { showToast('Sin actividad para exportar'); return; }
+  const lines = ['Timestamp,Usuario,Acción,Detalle'];
+  entries.forEach(e => {
+    lines.push(`"${e.timestamp}","${e.user}","${e.action}","${(e.detail||'').replace(/"/g,'""')}"`);
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `mypacerpro-log-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📥 Log exportado como CSV');
+}
+
+function clearActivityLog() {
+  if (!confirm('¿Limpiar todo el historial de actividad?')) return;
+  localStorage.removeItem(ACTIVITY_LOG_KEY);
+  renderActivityLog();
+  showToast('🗑️ Historial limpiado');
 }
 
 /* ═══════════════════════════ AUTH & ACCESS LOG ════════════════ */
@@ -3043,6 +3222,8 @@ function doLogin() {
     failedAttempts = 0;
     currentUser = user;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user, time: new Date().toISOString() }));
+    sessionStorage.setItem('mpp_user', user);
+    addActivityLog('LOGIN', `Inicio de sesión como ${user}`);
     addLogEntry(user, 'success', 'Inicio de sesión exitoso');
     errEl.textContent = '';
     attEl.textContent = '';
