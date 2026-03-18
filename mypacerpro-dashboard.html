@@ -1492,6 +1492,25 @@ function renderOverview(){
   mel.textContent='S/'+Math.abs(margin).toLocaleString('es-PE')+(margin<0?' (-)':'');
   mel.style.color=margin>=0?'var(--accent3)':'var(--danger)';
 
+  // KPI avg age
+  const avgAge = calcAvgAge(DB.base.filter(b => (b.estado||'').toUpperCase() === 'ACTIVO'));
+  const ageEl = document.getElementById('k-avg-age');
+  if (ageEl) ageEl.textContent = avgAge ? String(avgAge) : '—';
+
+  // KPI Sin Pago = vencidos (diaPago passed 1-15 days ago)
+  const _todayDay = today.getDate();
+  const _vencidos = DB.base.filter(b => {
+    if ((b.estado||'').toUpperCase() !== 'ACTIVO') return false;
+    if (isAuspicio(b)) return false;
+    const dp = parseInt(b.diaPago);
+    if (!dp) return false;
+    let diff = dp - _todayDay;
+    if (diff < -15) diff += 30;
+    return diff < 0 && diff >= -15;
+  }).length;
+  const unpaidEl = document.getElementById('k-unpaid');
+  if (unpaidEl) unpaidEl.textContent = _vencidos;
+
   // KPI coaches
   document.getElementById('k-coaches').textContent=
     Object.keys(abc).filter(c=>abc[c]>0).length;
@@ -2141,20 +2160,25 @@ function saveStudent() {
     const fingreso = record.fechaIngreso
       ? (() => { const d=new Date(record.fechaIngreso); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
       : '';
+    // Determine the original discipline from the composite ID for sheet row matching
+    const discForSheet = _origDisc || record.disc || '';
     writeToSheet('updateAlumno', {
-      dni: record.dni,
+      dni: String(record.dni),
       nombre: record.nombre,
       fechaNac: fnac,
       celular: record.celular,
       correo: record.correo,
       coach: record.coach,
       disciplina: record.disc,
-      originalDisc: _origDisc || record.disc,
+      originalDisc: discForSheet,
       estado: record.estado,
       tarifa: parseFloat(record.tarifa) || 0,
-      diaPago: record.diaPago || '',
+      diaPago: record.diaPago !== null && record.diaPago !== undefined ? record.diaPago : '',
       fechaIngreso: fingreso,
       notas: record.notas || ''
+    }).then(r => {
+      if (r.ok) showToast('✅ Alumno actualizado en Google Sheet');
+      else showToast('💾 Actualizado localmente — verifica conexión');
     });
   }
 
@@ -2567,7 +2591,7 @@ function openScript() {
     "      const tDisc = String(data.originalDisc || data.disciplina || '').toUpperCase();",
     '      for (let i = 1; i < vals.length; i++) {',
     "        if (String(vals[i][0]) === tDni && String(vals[i][6]||'').toUpperCase() === tDisc) {",
-    '          // Column order: DNI,Nombre,FechaNac,Celular,Correo,Coach,Disc,Estado,Tarifa,DiaPago,FechaIngreso,Notas',
+    '          // Matches by DNI + originalDisc (both uppercased)',
     '          sh.getRange(i+1,1,1,12).setValues([[',
     '            data.dni, data.nombre, data.fechaNac, data.celular, data.correo,',
     '            data.coach, data.disciplina, data.estado, Number(data.tarifa)||0,',
@@ -2712,26 +2736,31 @@ function toggleUnpaidPopup() {
   const isVisible = popup.style.display !== 'none';
   popup.style.display = isVisible ? 'none' : 'block';
   if (!isVisible) {
-    // Populate unpaid list
+    // Sin Pago = students whose diaPago is overdue (1-10 days past)
     const today = new Date();
-    const tk = mKey(today);
-    const paidThisMonth = new Set(
-      DB.ing.filter(r => r.fpago && mKey(r.fpago) === tk)
-            .map(r => (r.nombre||'').trim().toLowerCase())
-    );
+    const todayDay = today.getDate();
     const unpaid = allStudents().filter(s => {
       if ((s.estado||'').toUpperCase() !== 'ACTIVO') return false;
       if (isAuspicio(s)) return false;
-      return !paidThisMonth.has((s.nombre||'').trim().toLowerCase());
-    });
+      const dp = parseInt(s.diaPago);
+      if (!dp) return false;
+      let daysUntil = dp - todayDay;
+      if (daysUntil < -15) daysUntil += 30; // wrap month
+      // Overdue: past their pay day by up to 15 days
+      return daysUntil < 0 && daysUntil >= -15;
+    }).sort((a,b) => parseInt(a.diaPago) - parseInt(b.diaPago));
+
     const listEl = document.getElementById('unpaid-list');
     if (listEl) {
       listEl.innerHTML = unpaid.length
-        ? unpaid.map(s => `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between">
-            <span>${s.nombre}</span>
-            <span style="color:${cc(s.coach||'')}; font-size:11px">${s.coach||'—'}</span>
+        ? unpaid.map(s => `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="font-size:12px">${s.nombre}</span>
+            <span style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+              <span style="color:${cc(s.coach||'')};font-size:11px">${s.coach||'—'}</span>
+              <span style="color:var(--warning);font-size:10px;font-family:monospace">Día ${s.diaPago}</span>
+            </span>
           </div>`).join('')
-        : '<div style="color:var(--accent3)">✅ Todos al día</div>';
+        : '<div style="color:var(--accent3)">✅ Sin vencidos</div>';
       document.getElementById('k-unpaid').textContent = unpaid.length;
     }
   }
