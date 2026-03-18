@@ -197,7 +197,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .bday-info{flex:1;min-width:0}
 .bday-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bday-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.bday-days{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0}
+.bday-days{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0;padding-right:10px}
 .bday-empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
 
 /* ── FINANCE ── */
@@ -422,6 +422,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <button class="sync-btn" onclick="loadAll(true)">
     <span class="icon" id="syncIcon">🔄</span>
     <span class="label">Sincronizar Datos</span>
+  </button>
+  <button class="sync-btn" id="undo-btn" onclick="undoLastAction()" style="display:none;background:rgba(234,179,8,.08);color:var(--warning)">
+    <span class="icon">↩️</span><span class="label" id="undo-label">Deshacer</span>
   </button>
   <button class="script-cfg-btn" onclick="openScript()">
     <span class="icon">⚙️</span><span class="label">Apps Script</span>
@@ -1305,7 +1308,7 @@ function fetchSheet(name) {
 
 /* ═══════════════════════════ LOAD ALL ═════════════════════════ */
 async function loadAll(manual=false) {
-  if (manual) { const ld=document.getElementById('loader'); ld.className=''; ld.style.display='flex'; ld.style.opacity='1'; window._paidThisSession = new Set(); }
+  if (manual) { const ld=document.getElementById('loader'); ld.className=''; ld.style.display='flex'; ld.style.opacity='1'; sessionStorage.removeItem('mpp_paid_session'); window._paidThisSession = new Set(); }
   document.getElementById('syncIcon').className='spin';
 
   const setL = (p,m) => { document.getElementById('lFill').style.width=p+'%'; document.getElementById('lStatus').textContent=m; };
@@ -1327,12 +1330,20 @@ async function loadAll(manual=false) {
     setL(50,'Cargando BASE ALUMNOS...');
     const base = await fetchSheet('BASE ALUMNOS');
     DB.base = base.rows.slice(1).map(r=>({
-      dni:r[0],nombre:r[1],fechaNac:pgDate(r[2]),celular:r[3]!=null?String(r[3]):'',
+      dni:r[0]!=null?(()=>{
+        const raw=String(r[0]).trim();
+        return (/^\d+$/.test(raw)&&raw.length<8)?raw.padStart(8,'0'):raw;
+      })():null,nombre:r[1],fechaNac:pgDate(r[2]),celular:r[3]!=null?String(r[3]):'',
       correo:r[4],coach:r[5],disc:r[6],disciplina:r[6],estado:r[7],
       tarifa:r[8],monto:r[8],
       diaPago:r[9]!=null?parseInt(r[9]):null,
       fi:pgDate(r[10]),fechaIngreso:r[10],
-      _rowDni:r[0]!=null?String(r[0]).trim():''
+      _rowDni:r[0]!=null?(()=>{
+        // Preserve leading zeros: Peruvian DNI is 8 digits
+        const raw = String(r[0]).trim();
+        // If numeric and less than 8 chars, pad to 8 digits
+        return (/^\d+$/.test(raw) && raw.length < 8) ? raw.padStart(8,'0') : raw;
+      })():''
     }))
     .filter(r=>r.nombre);
 
@@ -1490,7 +1501,9 @@ function renderOverview(){
   const pk=mKey(new Date(now.getFullYear(),now.getMonth()-1,1));
 
   // KPI active
-  const act=last?.v||0;
+  // Exclude auspicio from active count (they have separate income)
+  const actNoAusp = DB.base.filter(s => (s.estado||'').toUpperCase()==='ACTIVO' && !isAuspicio(s)).length;
+  const act = actNoAusp;
   document.getElementById('k-active').textContent=act;
   if(prev){
     const v=pct(prev.v,act);
@@ -1754,7 +1767,7 @@ function renderBirthdays(){
   const today=new Date();
   const md=d=>`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const todayKey=md(today);
-  const studs=DB.base.filter(b=>b.fechaNac);
+  const studs=DB.base.filter(b=>b.fechaNac&&(b.estado||'').toUpperCase()==='ACTIVO');
 
   document.getElementById('bday-date-label').textContent=
     today.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -2226,6 +2239,11 @@ function saveStudent() {
     });
   }
 
+  // Push old data to undo stack before updating
+  if (_editingStudentId) {
+    const oldStudent = allStudents().find(st => String(st.id) === String(_editingStudentId));
+    if (oldStudent) pushUndo({ type: 'UPDATE_ALUMNO', data: {...oldStudent}, description: 'Editar ' + (oldStudent.nombre||'alumno') });
+  }
   // Activity log
   if (_editingStudentId) {
     addActivityLog('UPDATE_ALUMNO', `Actualizó alumno: ${record.nombre} (DNI: ${record.dni}) — Monto: S/${record.tarifa}, Coach: ${record.coach}`);
@@ -2259,6 +2277,8 @@ function deleteLocalStudent(id) {
     : `¿Eliminar a "${name}" del dashboard?\n\nNota: Si fue agregado localmente, también se eliminará del Sheet si fue sincronizado.`;
 
   if (!confirm(msg)) return;
+  // Push to undo stack before deleting
+  if (s) pushUndo({ type: 'DELETE_ALUMNO', data: {...s}, description: 'Eliminar ' + name });
 
   // Remove from localStorage
   const local = getLocalStudents();
@@ -2308,7 +2328,7 @@ function renderPayments() {
     if ((s.estado || '').toUpperCase() !== 'ACTIVO') return false;
     // Hide students already paid this session
     const paidKey = (s.nombre || '') + '|' + (s.diaPago || '');
-    if (window._paidThisSession?.has(paidKey)) return false;
+    if (getPaidThisSession().has(paidKey)) return false;
     return true;
   });
 
@@ -2492,7 +2512,19 @@ function showToast(msg) {
 
 /* ═══════════════════════════ PAYMENT CONFIRM ══════════════════ */
 // Track students paid this session so they disappear from the table
-window._paidThisSession = window._paidThisSession || new Set();
+// Persist paid students in sessionStorage for current session
+function getPaidThisSession() {
+  try {
+    const stored = sessionStorage.getItem('mpp_paid_session');
+    return new Set(stored ? JSON.parse(stored) : []);
+  } catch { return new Set(); }
+}
+function addPaidThisSession(key) {
+  const s = getPaidThisSession();
+  s.add(key);
+  sessionStorage.setItem('mpp_paid_session', JSON.stringify([...s]));
+}
+window._paidThisSession = getPaidThisSession();
 window._payStudent = null;
 
 function openPayConfirm(s) {
@@ -2556,7 +2588,8 @@ async function confirmPay() {
   // Mark student as paid so they disappear from the table
   if (window._payStudent) {
     const paidKey = (window._payStudent.nombre || '') + '|' + (window._payStudent.diaPago || '');
-    window._paidThisSession.add(paidKey);
+    addPaidThisSession(paidKey);
+    window._paidThisSession = getPaidThisSession();
   }
 
   // Always save locally first (guaranteed)
@@ -2776,7 +2809,7 @@ function renderStudentsWithAuspicio() {
 
   // KPIs — 5 cards now
   const kpiEl = document.getElementById('st-kpis');
-  const activos = regular.filter(s => (s.estado||'').toUpperCase()==='ACTIVO').length;
+  const activos = regular.filter(s => (s.estado||'').toUpperCase()==='ACTIVO' && !isAuspicio(s)).length;
   const inactivos = regular.filter(s => (s.estado||'').toUpperCase()==='INACTIVO').length;
   const pausados = regular.filter(s => (s.estado||'').toUpperCase()==='PAUSADO').length;
   const totalAusp = auspicio.length;
@@ -3187,6 +3220,70 @@ function clearActivityLog() {
   localStorage.removeItem(ACTIVITY_LOG_KEY);
   renderActivityLog();
   showToast('🗑️ Historial limpiado');
+}
+
+/* ═══════════════════════════ UNDO ════════════════════════════ */
+// Simple undo stack — stores last reversible action
+const _undoStack = [];
+
+function pushUndo(action) {
+  // action: { type, data, description }
+  _undoStack.push(action);
+  if (_undoStack.length > 10) _undoStack.shift();
+  const btn = document.getElementById('undo-btn');
+  const lbl = document.getElementById('undo-label');
+  if (btn) btn.style.display = '';
+  if (lbl) lbl.textContent = 'Deshacer: ' + action.description;
+}
+
+function undoLastAction() {
+  if (!_undoStack.length) { showToast('Nada que deshacer'); return; }
+  const action = _undoStack.pop();
+
+  if (action.type === 'DELETE_ALUMNO') {
+    // Restore student to localStorage
+    const local = getLocalStudents();
+    local.push(action.data);
+    saveLocalStudents(local);
+    // Also restore in sheet
+    writeToSheet('addAlumno', {
+      dni: action.data.dni || '',
+      nombre: action.data.nombre,
+      fechaNac: '',
+      celular: action.data.celular || '',
+      correo: action.data.correo || '',
+      coach: action.data.coach || '',
+      disciplina: action.data.disc || action.data.disciplina || '',
+      estado: action.data.estado || 'ACTIVO',
+      tarifa: parseFloat(action.data.tarifa) || 0,
+      diaPago: action.data.diaPago || '',
+      fechaIngreso: '',
+      notas: (action.data.notas || '') + ' [restaurado]'
+    });
+    renderStudentsWithAuspicio(); renderStudents();
+    showToast('↩️ Alumno "' + action.data.nombre + '" restaurado');
+  }
+
+  if (action.type === 'UPDATE_ALUMNO') {
+    // Restore old values to localStorage
+    const local = getLocalStudents();
+    const idx = local.findIndex(l => String(l.id) === String(action.data.id));
+    if (idx >= 0) local[idx] = action.data;
+    else local.push(action.data);
+    saveLocalStudents(local);
+    renderStudentsWithAuspicio(); renderStudents();
+    showToast('↩️ Cambios a "' + action.data.nombre + '" revertidos');
+  }
+
+  // Hide undo btn if stack empty
+  if (!_undoStack.length) {
+    const btn = document.getElementById('undo-btn');
+    if (btn) btn.style.display = 'none';
+  } else {
+    const lbl = document.getElementById('undo-label');
+    const top = _undoStack[_undoStack.length-1];
+    if (lbl) lbl.textContent = 'Deshacer: ' + top.description;
+  }
 }
 
 /* ═══════════════════════════ AUTH & ACCESS LOG ════════════════ */
