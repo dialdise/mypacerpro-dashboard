@@ -1300,7 +1300,13 @@ function fetchSheet(name) {
     script.onerror = () => {
       clearTimeout(timeout);
       delete window[cbName];
-      reject(new Error('Error de red al cargar: ' + name));
+      // Try alternate name (with/without accent marks) before rejecting
+      const altName = name.includes('Í') ? name.replace(/Í/g,'I') : name.replace(/IA$/,'ÍA').replace(/IAS$/,'ÍAS');
+      if (altName !== name) {
+        fetchSheet(altName).then(resolve).catch(() => reject(new Error('Error de red al cargar: ' + name)));
+      } else {
+        reject(new Error('Error de red al cargar: ' + name));
+      }
     };
     document.head.appendChild(script);
   });
@@ -1315,7 +1321,13 @@ async function loadAll(manual=false) {
 
   try {
     setL(8,'Cargando HISTORIAL MEMBRESIAS...');
-    const mem = await fetchSheet('HISTORIAL MEMBRESIAS');
+    // Try both with and without accent mark
+    let mem;
+    try { mem = await fetchSheet('HISTORIAL MEMBRESÍAS'); }
+    catch(e1) {
+      try { mem = await fetchSheet('HISTORIAL MEMBRESIAS'); }
+      catch(e2) { mem = {rows:[]}; console.warn('HISTORIAL MEMBRESIAS not found, continuing without it'); }
+    }
     DB.mem = mem.rows.map(r=>({dni:r[0],nombre:r[1],coach:r[2],disc:r[3],
       fi:pgDate(r[4]),ff:pgDate(r[5]),mes:pgDate(r[8]),activos:r[9]}))
       .filter(r=>r.nombre&&r.coach);
